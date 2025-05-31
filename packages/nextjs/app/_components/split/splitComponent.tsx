@@ -1,13 +1,26 @@
 import Link from "next/link";
-import { Split } from "../api/types";
-import { getReadyContributors } from "../api/utils";
+import { Split } from "../../api/types";
+import { getReadyContributors } from "../../api/utils";
 import { PlusIcon } from "@heroicons/react/16/solid";
 
 interface RequestComponentProps {
   split?: Split;
+  loading?: boolean;
 }
 
-const SplitComponent = ({ split }: RequestComponentProps) => {
+const SplitComponent = ({ split, loading }: RequestComponentProps) => {
+  if (loading) {
+    return (
+      <div className="w-full py-2 flex flex-row items-center justify-between hover:bg-base-300 rounded-lg px-4 transition-all duration-700 ease-in-out">
+        <div className="skeleton w-32 h-6" />
+        <div className="flex flex-row items-center gap-2">
+          <div className="skeleton w-16 h-4 " />
+          <progress className="progress w-56" value={0} max={1}></progress>
+        </div>
+      </div>
+    );
+  }
+
   if (!split) {
     return (
       <Link href="/requests/new" className="w-full">

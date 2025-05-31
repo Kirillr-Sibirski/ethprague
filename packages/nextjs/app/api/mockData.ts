@@ -8,7 +8,7 @@ export const data: Split[] = [
     fiatAmount: 120,
     fiatCurrency: "EUR",
     verified: true,
-    requestorAddress: "0x9bE875105C5c2663dbdA4f32EDfcEe154CAEF6E4",
+    requestorAddress: "0x59a1d62B7c958eC5f0e3334aadb9304F3a5C8CFc",
     contributors: [
       { username: "alice", contributed: 40, toContribute: 40 },
       { username: "bob", contributed: 30, toContribute: 40 },
@@ -22,7 +22,7 @@ export const data: Split[] = [
     fiatAmount: 300,
     fiatCurrency: "USD",
     verified: false,
-    requestorAddress: "0x9bE875105C5c2663dbdA4f32EDfcEe154CAEF6E4",
+    requestorAddress: "0x59a1d62B7c958eC5f0e3334aadb9304F3a5C8CFc",
     contributors: [
       { username: "dan", contributed: 100, toContribute: 100 },
       { username: "erin", contributed: 50, toContribute: 100 },
@@ -36,7 +36,7 @@ export const data: Split[] = [
     fiatAmount: 75,
     fiatCurrency: "GBP",
     verified: true,
-    requestorAddress: "0x9bE875105C5c2663dbdA4f32EDfcEe154CAEF6E4",
+    requestorAddress: "0x59a1d62B7c958eC5f0e3334aadb9304F3a5C8CFc",
     contributors: [
       { username: "gina", contributed: 25, toContribute: 25 },
       { username: "hank", contributed: 25, toContribute: 25 },
@@ -50,7 +50,7 @@ export const data: Split[] = [
     fiatAmount: 500,
     fiatCurrency: "CHF",
     verified: false,
-    requestorAddress: "0x9bE875105C5c2663dbdA4f32EDfcEe154CAEF6E4",
+    requestorAddress: "0x59a1d62B7c958eC5f0e3334aadb9304F3a5C8CFc",
     contributors: [
       { username: "julia", contributed: 200, toContribute: 250 },
       { username: "kevin", contributed: 150, toContribute: 250 },
@@ -63,7 +63,7 @@ export const data: Split[] = [
     fiatAmount: 220,
     fiatCurrency: "CZK",
     verified: true,
-    requestorAddress: "0x9bE875105C5c2663dbdA4f32EDfcEe154CAEF6E4",
+    requestorAddress: "0x59a1d62B7c958eC5f0e3334aadb9304F3a5C8CFc",
     contributors: [
       { username: "leo", contributed: 70, toContribute: 70 },
       { username: "maya", contributed: 100, toContribute: 70 },
