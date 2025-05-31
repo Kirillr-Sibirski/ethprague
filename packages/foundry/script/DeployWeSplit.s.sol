@@ -25,6 +25,6 @@ contract DeployWeSplit is ScaffoldETHDeploy {
      *      - Export contract addresses & ABIs to `nextjs` packages
      */
     function run() external ScaffoldEthDeployerRunner {
-        new WeSplit(deployer);
+        // new WeSplit(deployer);
     }
 }
