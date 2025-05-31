@@ -11,9 +11,11 @@ export interface Split {
   fiatCurrency: string;
   verified: boolean;
   requestorAddress: string;
+  contributors: Contributor[];
+  splitId: string;
 }
 
-export interface SplitRequest {
+export interface CreateSplit {
   fiatAmount: number;
   tokenAddress: string;
   fiatCurrency: string;
