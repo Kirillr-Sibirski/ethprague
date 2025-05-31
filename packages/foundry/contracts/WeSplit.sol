@@ -12,6 +12,7 @@ contract WeSplit {
     struct Contributor {
         string username; // To identify between different users
         uint256 contributed; // Amount of assets contributed so far in the requested token
+        uint256 withdrawn; // Amount of assets that have been withdrawn by the requester
         uint256 toContribute; // The fiat value that must be fulfilled (owed)
     }
     struct Split {
@@ -33,13 +34,7 @@ contract WeSplit {
     bytes32 usdcUsdFeed; // Crypto.USDC/USD
     bytes32 btcUsdFeed; // Crypto.BTC/USD
 
-    event SplitRequested(
-        address indexed requester,
-        bytes4 indexed splitId,
-        address tokenAddress,
-        uint256 fiatAmount,
-        string currency
-    );
+    event SplitRequested(address indexed requester, bytes4 splitId);
 
     event SplitWithdrawn(
         address indexed requester,
@@ -81,7 +76,15 @@ contract WeSplit {
         Contributor[] calldata contributors
     ) external {
         require(fiatAmount > 0, "Amount must be greater than 0");
-        // require(tokenAddress != address(0), "Invalid token address");
+        uint256 totalToContribute;
+        for (uint256 i = 0; i < contributors.length; i++) {
+            totalToContribute += contributors[i].toContribute;
+        }
+        require(
+            totalToContribute >= (fiatAmount * 995) / 1000 &&
+                totalToContribute <= (fiatAmount * 1005) / 1000,
+            "Total to contribute doesn't add up to the fiat amount (0.5% tolerance)"
+        );
 
         // Generate a unique split ID (includes timestamp to avoid collision)
         bytes32 splitId = keccak256(
@@ -93,7 +96,7 @@ contract WeSplit {
                 block.timestamp
             )
         );
-        bytes4 shortId = bytes4(splitId); // takes the first 3 bytes (6 hex chars)
+        bytes4 shortId = bytes4(splitId); // takes the first 4 bytes (8 hex chars)
 
         // Store the split info
         splits[shortId] = Split({
@@ -108,25 +111,16 @@ contract WeSplit {
 
         userSplits[msg.sender].push(shortId);
 
-        emit SplitRequested(
-            msg.sender,
-            shortId,
-            tokenAddress,
-            fiatAmount,
-            currency
-        );
+        emit SplitRequested(msg.sender, shortId);
     }
 
     /// @notice Withdraws tokens from a split
     /// @dev Handles both ERC-20 and native token transfers
     /// @param splitId The ID of the split to withdraw from
-    /// @param withdrawAmount The amount of tokens to withdraw (in wei or token decimals)
     function splitWithdraw(
         bytes4 splitId,
-        uint256 withdrawAmount,
         bytes[] calldata priceUpdate
     ) external {
-        // TODO: Add the proper state handling, add requires to prevent them from withdrawing more than they actually have
         Split memory split = splits[splitId];
 
         require(
@@ -135,42 +129,34 @@ contract WeSplit {
         ); // Check that msg.sender is the actual requester of the splitId
 
         uint256 totalContributed; // The total amount that has been contributed so far
+        uint256 totalWithdrawn;
         for (uint256 i = 0; i < split.contributors.length; i++) {
             totalContributed += split.contributors[i].contributed;
+            totalWithdrawn += split.contributors[i].withdrawn;
+            split.contributors[i].withdrawn = split.contributors[i].contributed;
         }
-
-        require(
-            totalContributed <= withdrawAmount,
-            "Withdrawing more tokens than has been contributed so far"
-        );
+        uint256 canWithdraw = totalContributed - totalWithdrawn;
 
         if (split.tokenAddress == address(0)) {
             // If native token (ETH, MATIC, etc.)
-            (bool sent, ) = msg.sender.call{value: withdrawAmount}("");
+            (bool sent, ) = msg.sender.call{value: canWithdraw}("");
             require(sent, "Native token withdrawal failed");
         } else {
             // ERC-20 token
             IERC20 token = IERC20(split.tokenAddress);
             require(
-                token.transfer(msg.sender, withdrawAmount),
+                token.transfer(msg.sender, canWithdraw),
                 "ERC20 withdrawal failed"
             );
         }
 
-        PythStructs.Price memory price = getPrice(
-            split.currency,
-            split.tokenAddress,
-            priceUpdate
-        );
-        require(price.price >= 0, "Negative price not allowed");
-        require(price.expo >= 0, "Negative exponent not allowed");
-        uint256 withdrawValue = withdrawAmount *
-            uint256(int256(price.price * price.expo));
+        int64 price = getPrice(split.currency, split.tokenAddress, priceUpdate);
+        require(price >= 0, "Negative price not allowed");
+        uint256 withdrawValue = canWithdraw * uint256(int256(price));
         uint256 lowerBound = (split.fiatAmount * 995) / 1000; // 99.5% of fiatAmount
         uint256 upperBound = (split.fiatAmount * 1005) / 1000; // 100.5% of fiatAmount
 
         if (withdrawValue >= lowerBound && withdrawValue <= upperBound) {
-            // TODO: pop the split from the mappings
             delete splits[splitId];
 
             // Remove splitId from userSplits[msg.sender] array
@@ -184,7 +170,7 @@ contract WeSplit {
             }
         }
 
-        emit SplitWithdrawn(msg.sender, splitId, withdrawAmount);
+        emit SplitWithdrawn(msg.sender, splitId, canWithdraw);
     }
 
     /// @notice Allows the contributors to deposit funds to pay for the bill split
@@ -198,13 +184,14 @@ contract WeSplit {
     ) external {
         require(amount > 0, "Amount must be greater than 0");
         Split storage split = splits[splitId];
+        // TODO: Actually transfer the assets
 
         // Loop through contributors to find the one with matching username
         bool found = false;
         for (uint256 i = 0; i < split.contributors.length; i++) {
             Contributor storage c = split.contributors[i];
             if (compareStrings(c.username, username)) {
-                c.contributed += amount;
+                c.contributed += amount; // In the requested asset
                 found = true;
                 break;
             }
@@ -218,7 +205,7 @@ contract WeSplit {
         string memory currencyTicket,
         address tokenAddress,
         bytes[] calldata priceUpdate
-    ) private returns (PythStructs.Price memory) {
+    ) private returns (int64) {
         string memory symbol;
         if (tokenAddress == address(0)) {
             symbol = "ETH"; // Only support ETH native assets for now
@@ -226,18 +213,26 @@ contract WeSplit {
             symbol = IERC20Metadata(tokenAddress).symbol();
         }
 
-        // TODO: Add a function here to check the currency of it. Assigns the price CURRENCY TO USD
+        uint fee = pyth.getUpdateFee(priceUpdate);
+        pyth.updatePriceFeeds{value: fee}(priceUpdate);
+
         int64 fxPrice;
+        int64 fxExp;
         if (compareStrings(currencyTicket, "EUR")) {
-            // Get FX price from Pyth here
+            // Get the price of the fiat in USD
+            fxPrice = pyth.getPriceNoOlderThan(fxUsdEurFeed, 60).price;
+            fxExp = pyth.getPriceNoOlderThan(fxUsdEurFeed, 60).expo;
         } else {
-            fxPrice = 0;
+            fxPrice = 1;
         }
 
         bytes32 feedId;
         if (compareStrings(symbol, "ETH")) {
+            // Get the price of the token in terms of the required fiat
             feedId = ethUsdFeed;
-        } else if (compareStrings(symbol, "BTC")) {
+        } else if (
+            compareStrings(symbol, "BTC") || compareStrings(symbol, "wBTC")
+        ) {
             feedId = btcUsdFeed;
         } else if (compareStrings(symbol, "USDC")) {
             feedId = usdcUsdFeed;
@@ -245,14 +240,17 @@ contract WeSplit {
             revert("Unsupported token");
         }
 
+        PythStructs.Price memory cryptoUsd = pyth.getPriceNoOlderThan(
+            feedId,
+            60
+        );
+
         // 1. Need to get the price of the token in USD first
         // 2. Get the get the USD to the currency
         // 3. Divide one by the other to get the price of the token in the wanted token
 
-        uint fee = pyth.getUpdateFee(priceUpdate);
-        pyth.updatePriceFeeds{value: fee}(priceUpdate);
-
-        return pyth.getPriceNoOlderThan("0x", 60); // priceFeedId
+        return ((cryptoUsd.price * (10 ^ cryptoUsd.expo)) /
+            (fxPrice * (10 ^ fxExp)));
     }
 
     function compareStrings(
