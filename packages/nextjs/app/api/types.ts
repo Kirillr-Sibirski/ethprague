@@ -1,10 +1,3 @@
-export interface Request {
-  total: number;
-  contributed: number;
-  description: string;
-  id: number;
-}
-
 export interface Split {
   tokenAddress: string;
   fiatAmount: number;
@@ -12,7 +5,8 @@ export interface Split {
   verified: boolean;
   requestorAddress: string;
   contributors: Contributor[];
-  splitId: string;
+  id: string;
+  name: string;
 }
 
 export interface CreateSplit {
