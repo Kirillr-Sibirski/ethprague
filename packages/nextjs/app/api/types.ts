@@ -14,6 +14,7 @@ export interface CreateSplit {
   tokenAddress: string;
   fiatCurrency: string;
   contributors: Contributor[];
+  name: string;
 }
 
 export interface Contributor {
