@@ -2,7 +2,7 @@ import { Split } from "./types";
 
 export const data: Split[] = [
   {
-    id: "split_001",
+    id: "a3d7xq9",
     name: "Dinner in Prague",
     tokenAddress: "0x1234567890abcdef1234567890abcdef12345678",
     fiatAmount: 120,
@@ -16,7 +16,7 @@ export const data: Split[] = [
     ],
   },
   {
-    id: "split_002",
+    id: "r9k2bvm",
     name: "Concert Tickets",
     tokenAddress: "0x9876543210abcdef9876543210abcdef98765432",
     fiatAmount: 300,
@@ -30,7 +30,7 @@ export const data: Split[] = [
     ],
   },
   {
-    id: "split_003",
+    id: "a8m4wzc",
     name: "Grocery Run",
     tokenAddress: "0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
     fiatAmount: 75,
@@ -44,7 +44,7 @@ export const data: Split[] = [
     ],
   },
   {
-    id: "split_004",
+    id: "r7yf8lk",
     name: "Weekend Getaway",
     tokenAddress: "0xbeefbeefbeefbeefbeefbeefbeefbeefbeefbeef",
     fiatAmount: 500,
@@ -57,7 +57,7 @@ export const data: Split[] = [
     ],
   },
   {
-    id: "split_005",
+    id: "a4vzm1q",
     name: "Birthday Surprise",
     tokenAddress: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd",
     fiatAmount: 220,
