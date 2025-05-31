@@ -19,8 +19,9 @@ export interface CreateSplit {
 
 export interface Contributor {
   username: string;
-  contributed: number;
-  toContribute: number;
+  contributed: bigint;
+  toContribute: bigint;
+  withdrawn: bigint;
 }
 
 export interface SplitWithdraw {

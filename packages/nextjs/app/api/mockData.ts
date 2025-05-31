@@ -10,9 +10,9 @@ export const data: Split[] = [
     verified: true,
     requestorAddress: "0x59a1d62B7c958eC5f0e3334aadb9304F3a5C8CFc",
     contributors: [
-      { username: "alice", contributed: 40, toContribute: 40 },
-      { username: "bob", contributed: 30, toContribute: 40 },
-      { username: "carol", contributed: 50, toContribute: 40 },
+      { username: "alice", contributed: 40n, toContribute: 40n, withdrawn: 0n },
+      { username: "bob", contributed: 30n, toContribute: 40n, withdrawn: 0n },
+      { username: "carol", contributed: 50n, toContribute: 40n, withdrawn: 0n },
     ],
   },
   {
@@ -24,9 +24,9 @@ export const data: Split[] = [
     verified: false,
     requestorAddress: "0x59a1d62B7c958eC5f0e3334aadb9304F3a5C8CFc",
     contributors: [
-      { username: "dan", contributed: 100, toContribute: 100 },
-      { username: "erin", contributed: 50, toContribute: 100 },
-      { username: "frank", contributed: 150, toContribute: 100 },
+      { username: "dan", contributed: 100n, toContribute: 100n, withdrawn: 0n },
+      { username: "erin", contributed: 50n, toContribute: 100n, withdrawn: 0n },
+      { username: "frank", contributed: 150n, toContribute: 100n, withdrawn: 0n },
     ],
   },
   {
@@ -38,9 +38,9 @@ export const data: Split[] = [
     verified: true,
     requestorAddress: "0x59a1d62B7c958eC5f0e3334aadb9304F3a5C8CFc",
     contributors: [
-      { username: "gina", contributed: 25, toContribute: 25 },
-      { username: "hank", contributed: 25, toContribute: 25 },
-      { username: "ian", contributed: 25, toContribute: 25 },
+      { username: "gina", contributed: 25n, toContribute: 25n, withdrawn: 0n },
+      { username: "hank", contributed: 25n, toContribute: 25n, withdrawn: 0n },
+      { username: "ian", contributed: 25n, toContribute: 25n, withdrawn: 0n },
     ],
   },
   {
@@ -52,8 +52,8 @@ export const data: Split[] = [
     verified: false,
     requestorAddress: "0x59a1d62B7c958eC5f0e3334aadb9304F3a5C8CFc",
     contributors: [
-      { username: "julia", contributed: 200, toContribute: 250 },
-      { username: "kevin", contributed: 150, toContribute: 250 },
+      { username: "julia", contributed: 200n, toContribute: 250n, withdrawn: 0n },
+      { username: "kevin", contributed: 150n, toContribute: 250n, withdrawn: 0n },
     ],
   },
   {
@@ -65,9 +65,9 @@ export const data: Split[] = [
     verified: true,
     requestorAddress: "0x59a1d62B7c958eC5f0e3334aadb9304F3a5C8CFc",
     contributors: [
-      { username: "leo", contributed: 70, toContribute: 70 },
-      { username: "maya", contributed: 100, toContribute: 70 },
-      { username: "nina", contributed: 50, toContribute: 80 },
+      { username: "leo", contributed: 70n, toContribute: 70n, withdrawn: 0n },
+      { username: "maya", contributed: 100n, toContribute: 70n, withdrawn: 0n },
+      { username: "nina", contributed: 50n, toContribute: 80n, withdrawn: 0n },
     ],
   },
 ];
