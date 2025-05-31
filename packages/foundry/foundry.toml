@@ -1,13 +1,14 @@
 [profile.default]
-src = 'contracts'
-out = 'out'
-libs = ['lib']
-fs_permissions = [{ access = "read-write", path = "./"}]
+src = "contracts"
+out = "out"
+libs = ["lib", "dependencies"]
 
+[[profile.default.fs_permissions]]
+access = "read-write"
+path = "./"
 
 [rpc_endpoints]
 default_network = "http://127.0.0.1:8545"
-
 mainnet = "https://eth-mainnet.alchemyapi.io/v2/${ALCHEMY_API_KEY}"
 sepolia = "https://eth-sepolia.g.alchemy.com/v2/${ALCHEMY_API_KEY}"
 arbitrum = "https://arb-mainnet.g.alchemy.com/v2/${ALCHEMY_API_KEY}"
@@ -26,15 +27,13 @@ scrollSepolia = "https://sepolia-rpc.scroll.io"
 scroll = "https://rpc.scroll.io"
 pgn = "https://rpc.publicgoods.network"
 pgnTestnet = "https://sepolia.publicgoods.network"
-
-
 localhost = "http://127.0.0.1:8545"
 
-[etherscan]
-polygonMumbai = { key = "${ETHERSCAN_API_KEY}" }
-sepolia = { key = "${ETHERSCAN_API_KEY}" }
+[etherscan.polygonMumbai]
+key = "${ETHERSCAN_API_KEY}"
 
-
+[etherscan.sepolia]
+key = "${ETHERSCAN_API_KEY}"
 
 [fmt]
 line_length = 120
@@ -42,8 +41,17 @@ tab_width = 4
 quote_style = "double"
 bracket_spacing = true
 int_types = "long"
+fs_permissions = [{ access = "read", path = "./testdata"}]
 
+[dependencies]
+"@openzeppelin-contracts" = "5.0.1"
+forge-std = "1.9.4"
+risc0-ethereum = { version = "2.0.0", url = "https://github.com/vlayer-xyz/risc0-ethereum/releases/download/v2.0.0-soldeer/contracts.zip" }
+vlayer = "1.0.1"
 
+[soldeer]
+# whether soldeer manages remappings
+remappings_generate = false
+# whether soldeer re-generates all remappings when installing, updating or uninstalling deps
+remappings_regenerate = false
 
-
-# See more config options https://book.getfoundry.sh/reference/config/overview
