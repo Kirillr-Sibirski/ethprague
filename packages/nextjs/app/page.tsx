@@ -1,71 +1,53 @@
 "use client";
 
-import Link from "next/link";
+import { useEffect, useState } from "react";
+import Image from "next/image";
+//import Link from "next/link";
 import type { NextPage } from "next";
-import { useAccount } from "wagmi";
-import { BugAntIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
-import { Address } from "~~/components/scaffold-eth";
+import { useTheme } from "next-themes";
+//import { useAccount } from "wagmi";
+import { PlusIcon } from "@heroicons/react/24/outline";
+
+//import { Address } from "~~/components/scaffold-eth";
 
 const Home: NextPage = () => {
-  const { address: connectedAddress } = useAccount();
+  //const { address: connectedAddress } = useAccount();
+  const openRequests = [
+    { id: 1, contributed: 7, total: 12, description: "Restaurant 9th July" },
+    { id: 2, contributed: 5, total: 10, description: "Groceries Run" },
+    { id: 3, contributed: 3, total: 8, description: "Movie Night" },
+    { id: 4, contributed: 9, total: 15, description: "Weekend Trip" },
+    { id: 5, contributed: 6, total: 12, description: "Birthday Gift" },
+    { id: 6, contributed: 2, total: 5, description: "Shopping w Friends" },
+  ];
+  const [assetEnding, setAssetEnding] = useState<string>("");
+  const theme = useTheme();
+
+  useEffect(() => {
+    const isDarkTheme = theme.resolvedTheme === "dark";
+    setAssetEnding(isDarkTheme ? "-white" : "-black");
+  }, [theme]);
 
   return (
-    <>
-      <div className="flex items-center flex-col grow pt-10">
-        <div className="px-5">
-          <h1 className="text-center">
-            <span className="block text-2xl mb-2">Welcome to</span>
-            <span className="block text-4xl font-bold">Scaffold-ETH 2</span>
-          </h1>
-          <div className="flex justify-center items-center space-x-2 flex-col">
-            <p className="my-2 font-medium">Connected Address:</p>
-            <Address address={connectedAddress} />
-          </div>
-
-          <p className="text-center text-lg">
-            Get started by editing{" "}
-            <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
-              packages/nextjs/app/page.tsx
-            </code>
-          </p>
-          <p className="text-center text-lg">
-            Edit your smart contract{" "}
-            <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
-              WeSplit.sol
-            </code>{" "}
-            in{" "}
-            <code className="italic bg-base-300 text-base font-bold max-w-full break-words break-all inline-block">
-              packages/hardhat/contracts
-            </code>
-          </p>
+    <div className="flex flex-col w-full h-full p-4 md:p-8 gap-4">
+      <div className="flex flex-col bg-base-200 px-4 py-2 rounded-xl">
+        <div className="flex flex-row gap-2 items-center w-full justify-between">
+          <h2 className="text-xl font-medium">Your Requests</h2>
+          <button className="btn btn-square bg-primary-content">
+            <PlusIcon className="h-5" />
+          </button>
         </div>
-
-        <div className="grow bg-base-300 w-full mt-16 px-8 py-12">
-          <div className="flex justify-center items-center gap-12 flex-col md:flex-row">
-            <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-xs rounded-3xl">
-              <BugAntIcon className="h-8 w-8 fill-secondary" />
-              <p>
-                Tinker with your smart contract using the{" "}
-                <Link href="/debug" passHref className="link">
-                  Debug Contracts
-                </Link>{" "}
-                tab.
-              </p>
-            </div>
-            <div className="flex flex-col bg-base-100 px-10 py-10 text-center items-center max-w-xs rounded-3xl">
-              <MagnifyingGlassIcon className="h-8 w-8 fill-secondary" />
-              <p>
-                Explore your local transactions with the{" "}
-                <Link href="/blockexplorer" passHref className="link">
-                  Block Explorer
-                </Link>{" "}
-                tab.
-              </p>
-            </div>
+        {openRequests.length == 0 ? (
+          <div className="w-full flex flex-col flex-grow items-center justify-center py-4">
+            <Image src={`/cat-not-found${assetEnding}.png`} alt="No open requests" height={128} width={128} />
+            <p className="text-sm font-light">No active requests found</p>
           </div>
-        </div>
+        ) : (
+          openRequests.map(request => <div key={request.id}>request</div>)
+        )}
+        <div className="flex flex-col gap-2"></div>
       </div>
-    </>
+    </div>
   );
 };
 
