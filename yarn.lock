@@ -2780,6 +2780,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@pythnetwork/pyth-sdk-solidity@npm:^4.1.0":
+  version: 4.1.0
+  resolution: "@pythnetwork/pyth-sdk-solidity@npm:4.1.0"
+  checksum: 0395a784d83cafe653e90c1555028167a035baedc3e2fffe1f8a61fd3b51394fb27f4932900da9464e8670e84df9a77e97c77b8199625474e09e33a2d35a45d2
+  languageName: node
+  linkType: hard
+
 "@rainbow-me/rainbowkit@npm:2.2.5":
   version: 2.2.5
   resolution: "@rainbow-me/rainbowkit@npm:2.2.5"
@@ -3043,6 +3050,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@se-2/foundry@workspace:packages/foundry"
   dependencies:
+    "@pythnetwork/pyth-sdk-solidity": ^4.1.0
+    bun-types: latest
     dotenv: ~16.3.1
     envfile: ~6.18.0
     ethers: ~5.7.1
@@ -3050,6 +3059,8 @@ __metadata:
     qrcode: ~1.5.3
     shx: ^0.3.4
     toml: ~3.0.0
+  peerDependencies:
+    typescript: ^5.0.0
   languageName: unknown
   linkType: soft
 
@@ -5459,6 +5470,15 @@ __metadata:
     node-gyp: latest
     node-gyp-build: ^4.3.0
   checksum: 51ce9ee19bc4b72c2eb9f9a231dd95e786ca5a00a6bdfcae83f1d5cd8169301c79245ce96913066a5a1bbe45c44e95bc5a1761a18798b835585c1a05af65b209
+  languageName: node
+  linkType: hard
+
+bun-types@latest:
+  version: 1.2.15
+  resolution: "bun-types@npm:1.2.15"
+  dependencies:
+    "@types/node": "*"
+  checksum: 33f55e374332281b7d73b28f75c82d97a3c3d9e942281d143697e2d96636650b24954c5048a20ce0d312a432506445fa938d28e58d8748d72b4c8bad086d2b77
   languageName: node
   linkType: hard
 
@@ -8465,9 +8485,9 @@ __metadata:
   linkType: hard
 
 "ignore@npm:^7.0.0":
-  version: 7.0.4
-  resolution: "ignore@npm:7.0.4"
-  checksum: 09b4d69192355ac066f7d99c0fdb26f52035d2eaae423bfb5f7389091d75a93bf9c105e1fbf51f557098f6d446726f29a63cef3a7d26722dc696dd345224719b
+  version: 7.0.5
+  resolution: "ignore@npm:7.0.5"
+  checksum: d0862bf64d3d58bf34d5fb0a9f725bec9ca5ce8cd1aecc8f28034269e8f69b8009ffd79ca3eda96962a6a444687781cd5efdb8c7c8ddc0a6996e36d31c217f14
   languageName: node
   linkType: hard
 
