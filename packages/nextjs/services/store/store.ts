@@ -1,6 +1,6 @@
+import scaffoldConfig from "../../scaffold.config";
+import { ChainWithAttributes, NETWORKS_EXTRA_DATA } from "../../utils/scaffold-eth";
 import { create } from "zustand";
-import scaffoldConfig from "~~/scaffold.config";
-import { ChainWithAttributes, NETWORKS_EXTRA_DATA } from "~~/utils/scaffold-eth";
 
 /**
  * Zustand Store
@@ -12,12 +12,14 @@ import { ChainWithAttributes, NETWORKS_EXTRA_DATA } from "~~/utils/scaffold-eth"
  */
 
 type GlobalState = {
+  /* -------------- Native Currency ------------- */
   nativeCurrency: {
     price: number;
     isFetching: boolean;
   };
   setNativeCurrencyPrice: (newNativeCurrencyPriceState: number) => void;
   setIsNativeCurrencyFetching: (newIsNativeCurrencyFetching: boolean) => void;
+  /* -------------- Target Network -------------- */
   targetNetwork: ChainWithAttributes;
   setTargetNetwork: (newTargetNetwork: ChainWithAttributes) => void;
 };

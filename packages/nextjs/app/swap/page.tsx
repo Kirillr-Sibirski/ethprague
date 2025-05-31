@@ -1,12 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { use1Inch } from "../../hooks/1inch";
+import { fetchWalletBalance, getTokenInfo } from "../../utils/1inch";
 import { HashLock, NetworkEnum, OrderStatus, PresetEnum, SupportedChain } from "@1inch/cross-chain-sdk";
 import { randomBytes } from "ethers";
 import { NextPage } from "next";
 import { parseUnits } from "viem";
 import { useAccount } from "wagmi";
-import { use1Inch } from "~~/hooks/1inch";
+
+// const networks = Object.entries(NetworkEnum)
+//   .splice(0, Object.values(NetworkEnum).length / 2)
+//   .reduce(
+//     (acc, [key, value]) => ({
+//       ...acc,
+//       [key]: value,
+//     }),
+//     {},
+//   );
+const networks = {
+  1: NetworkEnum.ETHEREUM,
+  137: NetworkEnum.POLYGON,
+  10: NetworkEnum.OPTIMISM,
+  42161: NetworkEnum.ARBITRUM,
+};
 
 const Page: NextPage = () => {
   const { address: account } = useAccount();
@@ -14,10 +31,67 @@ const Page: NextPage = () => {
   const { sdk } = use1Inch();
   const [processing, setProcessing] = useState(false);
 
+  const [balances, setBalances] = useState<any>({});
+  const [tokenInfos, setTokenInfos] = useState<any>({});
+
+  //  Fetch Wallet Balances
+  useEffect(() => {
+    if (!account) return;
+
+    (async () => setBalances(await fetchWalletBalance(Object.keys(networks), account)))();
+  }, [account]);
+
+  // Fetch Token Infos
+  useEffect(() => {
+    if (!account) return;
+
+    (async () => {
+      const updatedTokenInfos = { ...tokenInfos };
+
+      for (const [chainId, bals] of Object.entries(balances)) {
+        // If no balance in chain, ignore
+        if (!bals || Object.keys(bals).length === 0) continue;
+
+        // If no tokenInfos for chain, create
+        if (updatedTokenInfos[chainId] === undefined) {
+          updatedTokenInfos[chainId] = {};
+        }
+
+        // Iterate through wallet balance for chain
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        for (const [tokenAddress, _] of Object.entries(bals)) {
+          // If token info already exists, ignore
+          if (updatedTokenInfos[chainId][tokenAddress] !== undefined) continue;
+
+          try {
+            // Fetch token info
+            const tokenInfo = await getTokenInfo(Number(chainId), tokenAddress);
+
+            // Add token info to updatedTokenInfos
+            updatedTokenInfos[chainId][tokenAddress] = {
+              symbol: tokenInfo.symbol,
+              decimals: tokenInfo.decimals,
+              logoURI: tokenInfo.logoURI,
+            };
+
+            console.log({
+              symbol: tokenInfo.symbol,
+              decimals: tokenInfo.decimals,
+              logoURI: tokenInfo.logoURI,
+            });
+          } catch (error) {
+            console.log(error);
+          }
+        }
+      }
+
+      setTokenInfos(updatedTokenInfos);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account, balances]); // intenionally ignoring tokenInfos
+
   async function swap() {
     if (!sdk || !account) return;
-
-    console.log(account);
 
     try {
       setProcessing(true);
@@ -106,12 +180,44 @@ const Page: NextPage = () => {
   }
 
   return (
-    <>
-      <div>Swap</div>
+    <div className="ml-4 mr-auto flex flex-col">
+      <h1>Swap Module</h1>
+      {/* <div>Processing: {processing}</div> */}
+      {/* <h2>Available Chains:</h2>
+      <div>
+        {networks.map(([id, name], k) => (
+          <div key={k}>
+            {name}: {id}
+          </div>
+        ))}
+      </div> */}
+      <div>Chain Assets:</div>
+      <div>
+        {Object.entries(balances).map(([id, assets]) => {
+          if (!assets || Object.keys(assets).length === 0) return null;
+
+          const out = {};
+
+          for (const [tokenAddress, balance] of Object.entries(assets)) {
+            if (!tokenInfos[id] || !tokenInfos[id][tokenAddress]) continue;
+
+            out[tokenAddress] = {
+              ...tokenInfos[id][tokenAddress],
+              balance,
+            };
+          }
+
+          return (
+            <div key={id}>
+              {id}: {JSON.stringify(out)}
+            </div>
+          );
+        })}
+      </div>
       <button onClick={swap} disabled={processing}>
-        SWAP
+        Swap
       </button>
-    </>
+    </div>
   );
 };
 
