@@ -27,6 +27,12 @@ contract WeSplit {
     mapping(bytes4 => Split) public splits; // Tracks all the split data
     mapping(address => bytes4[]) public userSplits; // Track all the splits for each requester
 
+    // Declare price feed IDs for Pyth here
+    bytes32 fxUsdEurFeed; // FX.EUR/USD
+    bytes32 ethUsdFeed; // Crypto.ETH/USD
+    bytes32 usdcUsdFeed; // Crypto.USDC/USD
+    bytes32 btcUsdFeed; // Crypto.BTC/USD
+
     event SplitRequested(
         address indexed requester,
         bytes4 indexed splitId,
@@ -46,19 +52,19 @@ contract WeSplit {
     /**
      * @param _pythAddress The address of the Pyth contract
      */
+    // Pass the addresses for each pair but need to somehow identify each one, ig with a switch case?
     constructor(
         address _pythAddress,
-        address[] memory supportedAssets,
-        string[] memory currencies,
-        bytes32[] memory feedIds
+        bytes32 _fxUsdEurFeed,
+        bytes32 _ethUsdFeed,
+        bytes32 _usdcUsdFeed,
+        bytes32 _btcUsdFeed
     ) {
-        require(
-            supportedAssets.length * currencies.length == feedIds.length,
-            "Feed ID count mismatch"
-        );
-
         pyth = IPyth(_pythAddress);
-
+        fxUsdEurFeed = _fxUsdEurFeed;
+        ethUsdFeed = _ethUsdFeed;
+        usdcUsdFeed = _usdcUsdFeed;
+        btcUsdFeed = _btcUsdFeed;
     }
 
     /// @notice Creates a new split request
@@ -197,10 +203,7 @@ contract WeSplit {
         bool found = false;
         for (uint256 i = 0; i < split.contributors.length; i++) {
             Contributor storage c = split.contributors[i];
-            if (
-                keccak256(abi.encodePacked(c.username)) ==
-                keccak256(abi.encodePacked(username)) // cuz can't compare strings directly in solidity
-            ) {
+            if (compareStrings(c.username, username)) {
                 c.contributed += amount;
                 found = true;
                 break;
@@ -216,6 +219,32 @@ contract WeSplit {
         address tokenAddress,
         bytes[] calldata priceUpdate
     ) private returns (PythStructs.Price memory) {
+        string memory symbol;
+        if (tokenAddress == address(0)) {
+            symbol = "ETH"; // Only support ETH native assets for now
+        } else {
+            symbol = IERC20Metadata(tokenAddress).symbol();
+        }
+
+        // TODO: Add a function here to check the currency of it. Assigns the price CURRENCY TO USD
+        int64 fxPrice;
+        if (compareStrings(currencyTicket, "EUR")) {
+            // Get FX price from Pyth here
+        } else {
+            fxPrice = 0;
+        }
+
+        bytes32 feedId;
+        if (compareStrings(symbol, "ETH")) {
+            feedId = ethUsdFeed;
+        } else if (compareStrings(symbol, "BTC")) {
+            feedId = btcUsdFeed;
+        } else if (compareStrings(symbol, "USDC")) {
+            feedId = usdcUsdFeed;
+        } else {
+            revert("Unsupported token");
+        }
+
         // 1. Need to get the price of the token in USD first
         // 2. Get the get the USD to the currency
         // 3. Divide one by the other to get the price of the token in the wanted token
@@ -223,7 +252,14 @@ contract WeSplit {
         uint fee = pyth.getUpdateFee(priceUpdate);
         pyth.updatePriceFeeds{value: fee}(priceUpdate);
 
-        return pyth.getPriceNoOlderThan('0x', 60); // priceFeedId
+        return pyth.getPriceNoOlderThan("0x", 60); // priceFeedId
+    }
+
+    function compareStrings(
+        string memory a,
+        string memory b
+    ) internal pure returns (bool) {
+        return keccak256(abi.encodePacked(a)) == keccak256(abi.encodePacked(b));
     }
 
     // Helper for frontend to get all split IDs of a user, display it in a list
