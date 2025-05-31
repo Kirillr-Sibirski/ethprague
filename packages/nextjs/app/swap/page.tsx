@@ -1,58 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { HashLock, NetworkEnum, OrderStatus, PresetEnum, SDK, SupportedChain } from "@1inch/cross-chain-sdk";
+import { useState } from "react";
+import { HashLock, NetworkEnum, OrderStatus, PresetEnum, SupportedChain } from "@1inch/cross-chain-sdk";
 import { randomBytes } from "ethers";
 import { NextPage } from "next";
 import { parseUnits } from "viem";
-import { useAccount, useWalletClient } from "wagmi";
+import { useAccount } from "wagmi";
+import { use1Inch } from "~~/hooks/1inch";
 
 const Page: NextPage = () => {
-  const { data: walletClient } = useWalletClient();
   const { address: account } = useAccount();
 
-  const [blockchainProvider, setBlockchainProvider] = useState<any>();
-  const [sdk, setSdk] = useState<SDK>();
+  const { sdk } = use1Inch();
   const [processing, setProcessing] = useState(false);
-
-  useEffect(() => {
-    if (walletClient) {
-      const provider = {
-        signTypedData(walletAddress: string, typedData: any): Promise<string> {
-          console.log("SignTypedData", account, walletAddress, typedData);
-
-          return walletClient!.signTypedData(typedData);
-        },
-        ethCall(contractAddress: string, callData: `0x${string}`): Promise<string> {
-          console.log("ethCall", contractAddress, callData);
-
-          return walletClient!
-            .sendCalls({
-              account,
-              calls: [
-                {
-                  to: contractAddress,
-                  data: callData,
-                },
-              ],
-            })
-            .then(res => res.id);
-        },
-      };
-      setBlockchainProvider(provider);
-    }
-  }, [account, walletClient]);
-
-  useEffect(() => {
-    if (blockchainProvider) {
-      console.log("blockchainProvider", blockchainProvider);
-      const sdk = new SDK({
-        url: "http://localhost:8888/fusion-plus",
-        blockchainProvider,
-      });
-      setSdk(sdk);
-    }
-  }, [blockchainProvider]);
 
   async function swap() {
     if (!sdk || !account) return;
