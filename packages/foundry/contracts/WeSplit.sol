@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 import "forge-std/console.sol"; // Useful for debugging. Remove when deploying to a live network.
-import "openzeppelin-contracts/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract WeSplit {
     struct Contributor {
@@ -160,7 +160,7 @@ contract WeSplit {
         string memory currencyTicket,
         address tokenAddress
     ) private returns (uint256) {
-        // Here goes the Pyth implementation that returns the price of the asset
+        // TODO: Here goes the Pyth implementation that returns the price of the asset
     }
 
     // Helper for frontend to get all split IDs of a user, display it in a list
