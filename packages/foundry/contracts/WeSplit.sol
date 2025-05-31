@@ -26,7 +26,6 @@ contract WeSplit {
 
     mapping(bytes4 => Split) public splits; // Tracks all the split data
     mapping(address => bytes4[]) public userSplits; // Track all the splits for each requester
-    mapping(address => mapping(string => bytes32)) public priceFeeds; // All the different price feeds that we have
 
     event SplitRequested(
         address indexed requester,
@@ -60,13 +59,6 @@ contract WeSplit {
 
         pyth = IPyth(_pythAddress);
 
-        uint256 index = 0;
-        for (uint i = 0; i < supportedAssets.length; i++) {
-            for (uint j = 0; j < currencies.length; j++) {
-                priceFeeds[supportedAssets[i]][currencies[j]] = feedIds[index];
-                index++;
-            }
-        }
     }
 
     /// @notice Creates a new split request
@@ -224,13 +216,14 @@ contract WeSplit {
         address tokenAddress,
         bytes[] calldata priceUpdate
     ) private returns (PythStructs.Price memory) {
-        bytes32 priceFeedId = priceFeeds[tokenAddress][currencyTicket];
-        require(priceFeedId != 0, "Unsupported asset/currency");
+        // 1. Need to get the price of the token in USD first
+        // 2. Get the get the USD to the currency
+        // 3. Divide one by the other to get the price of the token in the wanted token
 
         uint fee = pyth.getUpdateFee(priceUpdate);
         pyth.updatePriceFeeds{value: fee}(priceUpdate);
 
-        return pyth.getPriceNoOlderThan(priceFeedId, 60);
+        return pyth.getPriceNoOlderThan('0x', 60); // priceFeedId
     }
 
     // Helper for frontend to get all split IDs of a user, display it in a list
