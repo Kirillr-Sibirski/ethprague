@@ -181,10 +181,25 @@ contract WeSplit {
         bytes4 splitId,
         string calldata username,
         uint256 amount
-    ) external {
+    ) external payable {
         require(amount > 0, "Amount must be greater than 0");
+
         Split storage split = splits[splitId];
-        // TODO: Actually transfer the assets
+
+        // Check and handle payment
+        if (split.tokenAddress == address(0)) {
+            // Native token (e.g., ETH)
+            require(msg.value == amount, "Incorrect native token amount sent");
+        } else {
+            // ERC20 token
+            require(msg.value == 0, "ETH sent with ERC20 contribution");
+            bool success = IERC20(split.tokenAddress).transferFrom(
+                msg.sender,
+                address(this),
+                amount
+            );
+            require(success, "ERC20 transfer failed");
+        }
 
         // Loop through contributors to find the one with matching username
         bool found = false;
