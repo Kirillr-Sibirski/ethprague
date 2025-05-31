@@ -3077,6 +3077,7 @@ __metadata:
     eslint-config-next: ~15.2.3
     eslint-config-prettier: ~10.1.1
     eslint-plugin-prettier: ~5.2.4
+    ethers: ^6.14.3
     kubo-rpc-client: ~5.0.2
     next: ~15.2.3
     next-nprogress-bar: ~2.3.13
@@ -7395,7 +7396,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ethers@npm:^6.13.1":
+"ethers@npm:^6.13.1, ethers@npm:^6.14.3":
   version: 6.14.3
   resolution: "ethers@npm:6.14.3"
   dependencies:

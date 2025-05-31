@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { NetworkEnum, SDK, SupportedChain } from "@1inch/cross-chain-sdk";
+import { HashLock, NetworkEnum, OrderStatus, SDK, SupportedChain } from "@1inch/cross-chain-sdk";
+import { randomBytes } from "ethers";
 import { NextPage } from "next";
 import { useAccount, useWalletClient } from "wagmi";
 
@@ -11,6 +12,7 @@ const Page: NextPage = () => {
 
   const [blockchainProvider, setBlockchainProvider] = useState<any>();
   const [sdk, setSdk] = useState<SDK>();
+  const [processing, setProcessing] = useState(false);
 
   useEffect(() => {
     if (walletClient) {
@@ -39,8 +41,7 @@ const Page: NextPage = () => {
   useEffect(() => {
     if (blockchainProvider) {
       const sdk = new SDK({
-        url: "https://1inch-vercel-proxy-lac.vercel.app/fusion",
-        authKey: process.env.NEXT_PUBLIC_1INCH_API_KEY,
+        url: "http://localhost:8888/fusion-plus",
         blockchainProvider,
       });
       setSdk(sdk);
@@ -48,24 +49,80 @@ const Page: NextPage = () => {
   }, [blockchainProvider]);
 
   async function swap() {
-    if (!sdk) return;
+    if (!sdk || !account) return;
 
-    const params = {
-      srcChainId: NetworkEnum.ETHEREUM as SupportedChain,
-      dstChainId: NetworkEnum.ARBITRUM as SupportedChain,
-      srcTokenAddress: "0x6b175474e89094c44da98b954eedeac495271d0f",
-      dstTokenAddress: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-      amount: "1000000000000000000000",
-    };
+    try {
+      setProcessing(true);
 
-    const quote = await sdk.getQuote(params);
-    console.log(quote);
+      const params = {
+        srcChainId: NetworkEnum.ARBITRUM as SupportedChain,
+        dstChainId: NetworkEnum.OPTIMISM as SupportedChain,
+        srcTokenAddress: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        dstTokenAddress: "0x0b2c639c533813f4aa9d7837caf62653d097ff85",
+        amount: "0000000000000005000000",
+        enableEstimate: true,
+      };
+
+      const quote = await sdk.getQuote(params);
+      console.log(quote);
+
+      const secretsCount = quote.getPreset().secretsCount;
+
+      const secrets = Array.from({ length: secretsCount }).map(
+        () => `0x${Buffer.from(randomBytes(32)).toString("hex")}`,
+      );
+      const secretHashes = secrets.map(x => HashLock.hashSecret(x));
+
+      const hashLock =
+        secrets.length === 1
+          ? HashLock.forSingleFill(secrets[0])
+          : HashLock.forMultipleFills(HashLock.getMerkleLeaves(secrets));
+
+      const order = await sdk.createOrder(quote, {
+        walletAddress: account,
+        hashLock,
+        secretHashes,
+      });
+
+      console.log(order);
+      console.log("EEE");
+
+      const a = await sdk.submitOrder(quote.srcChainId, order.order, order.quoteId, secretHashes);
+      console.log(a);
+
+      // Share secrets
+      const interval = setInterval(async () => {
+        const secretsToShare = await sdk.getReadyToAcceptSecretFills(order.hash);
+
+        if (secretsToShare.fills.length) {
+          for (const { idx } of secretsToShare.fills) {
+            await sdk.submitSecret(order.hash, secrets[idx]);
+
+            console.log({ idx }, "shared secret");
+          }
+        }
+
+        // check if order finished
+        const { status } = await sdk.getOrderStatus(order.hash);
+
+        if (status === OrderStatus.Executed || status === OrderStatus.Expired || status === OrderStatus.Refunded) {
+          console.log("UNGA BUNGA");
+          clearInterval(interval);
+        }
+      }, 1000);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setProcessing(false);
+    }
   }
 
   return (
     <>
       <div>Swap</div>
-      <button onClick={swap}>AWFI</button>
+      <button onClick={swap} disabled={processing}>
+        SWAP
+      </button>
     </>
   );
 };
