@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { HashLock, NetworkEnum, OrderStatus, SDK, SupportedChain } from "@1inch/cross-chain-sdk";
+import { HashLock, NetworkEnum, OrderStatus, PresetEnum, SDK, SupportedChain } from "@1inch/cross-chain-sdk";
 import { randomBytes } from "ethers";
 import { NextPage } from "next";
+import { parseUnits } from "viem";
 import { useAccount, useWalletClient } from "wagmi";
 
 const Page: NextPage = () => {
@@ -18,9 +19,13 @@ const Page: NextPage = () => {
     if (walletClient) {
       const provider = {
         signTypedData(walletAddress: string, typedData: any): Promise<string> {
+          console.log("SignTypedData", account, walletAddress, typedData);
+
           return walletClient!.signTypedData(typedData);
         },
         ethCall(contractAddress: string, callData: `0x${string}`): Promise<string> {
+          console.log("ethCall", contractAddress, callData);
+
           return walletClient!
             .sendCalls({
               account,
@@ -40,6 +45,7 @@ const Page: NextPage = () => {
 
   useEffect(() => {
     if (blockchainProvider) {
+      console.log("blockchainProvider", blockchainProvider);
       const sdk = new SDK({
         url: "http://localhost:8888/fusion-plus",
         blockchainProvider,
@@ -51,6 +57,8 @@ const Page: NextPage = () => {
   async function swap() {
     if (!sdk || !account) return;
 
+    console.log(account);
+
     try {
       setProcessing(true);
 
@@ -58,19 +66,21 @@ const Page: NextPage = () => {
         srcChainId: NetworkEnum.ARBITRUM as SupportedChain,
         dstChainId: NetworkEnum.OPTIMISM as SupportedChain,
         srcTokenAddress: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
-        dstTokenAddress: "0x0b2c639c533813f4aa9d7837caf62653d097ff85",
-        amount: "0000000000000005000000",
+        dstTokenAddress: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        amount: `${parseUnits("9", 6)}`,
         enableEstimate: true,
+        walletAddress: account,
       };
 
       const quote = await sdk.getQuote(params);
       console.log(quote);
 
-      const secretsCount = quote.getPreset().secretsCount;
+      const preset = PresetEnum.fast;
 
-      const secrets = Array.from({ length: secretsCount }).map(
-        () => `0x${Buffer.from(randomBytes(32)).toString("hex")}`,
-      );
+      const secrets = Array.from({
+        length: quote.presets[preset].secretsCount,
+      }).map(() => "0x" + Buffer.from(randomBytes(32)).toString("hex"));
+      console.log(secrets);
       const secretHashes = secrets.map(x => HashLock.hashSecret(x));
 
       const hashLock =
@@ -78,38 +88,56 @@ const Page: NextPage = () => {
           ? HashLock.forSingleFill(secrets[0])
           : HashLock.forMultipleFills(HashLock.getMerkleLeaves(secrets));
 
-      const order = await sdk.createOrder(quote, {
-        walletAddress: account,
-        hashLock,
-        secretHashes,
-      });
+      try {
+        const { order, quoteId, hash } = await sdk.createOrder(quote, {
+          walletAddress: account,
+          hashLock,
+          secretHashes,
+          preset: PresetEnum.fast,
+          receiver: account,
+        });
+        console.log({ hash, quoteId, order }, "order created");
 
-      console.log(order);
-      console.log("EEE");
+        try {
+          const _orderInfo = await sdk.submitOrder(quote.srcChainId, order, quoteId, secretHashes);
+          console.log("Order submitted successfully:", _orderInfo);
 
-      const a = await sdk.submitOrder(quote.srcChainId, order.order, order.quoteId, secretHashes);
-      console.log(a);
+          // Share secrets
+          const interval = setInterval(async () => {
+            const secretsToShare = await sdk.getReadyToAcceptSecretFills(hash);
 
-      // Share secrets
-      const interval = setInterval(async () => {
-        const secretsToShare = await sdk.getReadyToAcceptSecretFills(order.hash);
+            if (secretsToShare.fills.length) {
+              for (const { idx } of secretsToShare.fills) {
+                await sdk.submitSecret(hash, secrets[idx]);
 
-        if (secretsToShare.fills.length) {
-          for (const { idx } of secretsToShare.fills) {
-            await sdk.submitSecret(order.hash, secrets[idx]);
+                console.log({ idx }, "shared secret");
+              }
+            }
 
-            console.log({ idx }, "shared secret");
+            // check if order finished
+            const { status } = await sdk.getOrderStatus(hash);
+
+            if (status === OrderStatus.Executed || status === OrderStatus.Expired || status === OrderStatus.Refunded) {
+              console.log("Order finished");
+              clearInterval(interval);
+            }
+          }, 1000);
+        } catch (submitError: any) {
+          if (submitError.response?.data) {
+            console.error("Submit error response data:", JSON.stringify(submitError.response.data, null, 2));
+          } else {
+            console.error("Submit error details:", submitError);
           }
+          return;
         }
-
-        // check if order finished
-        const { status } = await sdk.getOrderStatus(order.hash);
-
-        if (status === OrderStatus.Executed || status === OrderStatus.Expired || status === OrderStatus.Refunded) {
-          console.log("UNGA BUNGA");
-          clearInterval(interval);
+      } catch (error: any) {
+        if (error.response?.data) {
+          console.error("Create order error response data:", JSON.stringify(error.response.data, null, 2));
+        } else {
+          console.error("Create order error details:", error);
         }
-      }, 1000);
+        return;
+      }
     } catch (error) {
       console.error(error);
     } finally {
