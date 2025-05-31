@@ -5,58 +5,272 @@
 import { GenericContractsDeclaration } from "~~/utils/scaffold-eth/contract";
 
 const deployedContracts = {
-  31337: {
+  10: {
     WeSplit: {
-      address: "0xa15bb66138824a1c7167f5e85b957d04dd34e468",
+      address: "0x0231f8e18af63f90483312db5347886ede54189e",
       abi: [
         {
           type: "constructor",
           inputs: [
             {
-              name: "_owner",
+              name: "_pythAddress",
               type: "address",
               internalType: "address",
+            },
+            {
+              name: "_fxUsdEurFeed",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+            {
+              name: "_ethUsdFeed",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+            {
+              name: "_usdcUsdFeed",
+              type: "bytes32",
+              internalType: "bytes32",
+            },
+            {
+              name: "_btcUsdFeed",
+              type: "bytes32",
+              internalType: "bytes32",
             },
           ],
           stateMutability: "nonpayable",
         },
         {
-          type: "receive",
+          type: "function",
+          name: "contributeSplit",
+          inputs: [
+            {
+              name: "splitId",
+              type: "bytes4",
+              internalType: "bytes4",
+            },
+            {
+              name: "username",
+              type: "string",
+              internalType: "string",
+            },
+            {
+              name: "amount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+          ],
+          outputs: [],
           stateMutability: "payable",
         },
         {
           type: "function",
-          name: "greeting",
-          inputs: [],
+          name: "getSplit",
+          inputs: [
+            {
+              name: "splitId",
+              type: "bytes4",
+              internalType: "bytes4",
+            },
+          ],
           outputs: [
             {
               name: "",
-              type: "string",
-              internalType: "string",
+              type: "tuple",
+              internalType: "struct WeSplit.Split",
+              components: [
+                {
+                  name: "requesterAddress",
+                  type: "address",
+                  internalType: "address",
+                },
+                {
+                  name: "tokenAddress",
+                  type: "address",
+                  internalType: "address",
+                },
+                {
+                  name: "fiatAmount",
+                  type: "uint256",
+                  internalType: "uint256",
+                },
+                {
+                  name: "currency",
+                  type: "string",
+                  internalType: "string",
+                },
+                {
+                  name: "description",
+                  type: "string",
+                  internalType: "string",
+                },
+                {
+                  name: "verified",
+                  type: "bool",
+                  internalType: "bool",
+                },
+                {
+                  name: "contributors",
+                  type: "tuple[]",
+                  internalType: "struct WeSplit.Contributor[]",
+                  components: [
+                    {
+                      name: "username",
+                      type: "string",
+                      internalType: "string",
+                    },
+                    {
+                      name: "contributed",
+                      type: "uint256",
+                      internalType: "uint256",
+                    },
+                    {
+                      name: "withdrawn",
+                      type: "uint256",
+                      internalType: "uint256",
+                    },
+                    {
+                      name: "toContribute",
+                      type: "uint256",
+                      internalType: "uint256",
+                    },
+                  ],
+                },
+              ],
             },
           ],
           stateMutability: "view",
         },
         {
           type: "function",
-          name: "owner",
-          inputs: [],
-          outputs: [
+          name: "getUserSplits",
+          inputs: [
             {
-              name: "",
+              name: "user",
               type: "address",
               internalType: "address",
             },
           ],
+          outputs: [
+            {
+              name: "",
+              type: "bytes4[]",
+              internalType: "bytes4[]",
+            },
+          ],
           stateMutability: "view",
         },
         {
           type: "function",
-          name: "premium",
-          inputs: [],
-          outputs: [
+          name: "requestSplit",
+          inputs: [
+            {
+              name: "fiatAmount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "tokenAddress",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "currency",
+              type: "string",
+              internalType: "string",
+            },
+            {
+              name: "description",
+              type: "string",
+              internalType: "string",
+            },
+            {
+              name: "contributors",
+              type: "tuple[]",
+              internalType: "struct WeSplit.Contributor[]",
+              components: [
+                {
+                  name: "username",
+                  type: "string",
+                  internalType: "string",
+                },
+                {
+                  name: "contributed",
+                  type: "uint256",
+                  internalType: "uint256",
+                },
+                {
+                  name: "withdrawn",
+                  type: "uint256",
+                  internalType: "uint256",
+                },
+                {
+                  name: "toContribute",
+                  type: "uint256",
+                  internalType: "uint256",
+                },
+              ],
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "splitWithdraw",
+          inputs: [
+            {
+              name: "splitId",
+              type: "bytes4",
+              internalType: "bytes4",
+            },
+            {
+              name: "priceUpdate",
+              type: "bytes[]",
+              internalType: "bytes[]",
+            },
+          ],
+          outputs: [],
+          stateMutability: "nonpayable",
+        },
+        {
+          type: "function",
+          name: "splits",
+          inputs: [
             {
               name: "",
+              type: "bytes4",
+              internalType: "bytes4",
+            },
+          ],
+          outputs: [
+            {
+              name: "requesterAddress",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "tokenAddress",
+              type: "address",
+              internalType: "address",
+            },
+            {
+              name: "fiatAmount",
+              type: "uint256",
+              internalType: "uint256",
+            },
+            {
+              name: "currency",
+              type: "string",
+              internalType: "string",
+            },
+            {
+              name: "description",
+              type: "string",
+              internalType: "string",
+            },
+            {
+              name: "verified",
               type: "bool",
               internalType: "bool",
             },
@@ -65,80 +279,71 @@ const deployedContracts = {
         },
         {
           type: "function",
-          name: "setGreeting",
-          inputs: [
-            {
-              name: "_newGreeting",
-              type: "string",
-              internalType: "string",
-            },
-          ],
-          outputs: [],
-          stateMutability: "payable",
-        },
-        {
-          type: "function",
-          name: "totalCounter",
-          inputs: [],
-          outputs: [
-            {
-              name: "",
-              type: "uint256",
-              internalType: "uint256",
-            },
-          ],
-          stateMutability: "view",
-        },
-        {
-          type: "function",
-          name: "userGreetingCounter",
+          name: "userSplits",
           inputs: [
             {
               name: "",
               type: "address",
               internalType: "address",
             },
-          ],
-          outputs: [
             {
               name: "",
               type: "uint256",
               internalType: "uint256",
             },
           ],
+          outputs: [
+            {
+              name: "",
+              type: "bytes4",
+              internalType: "bytes4",
+            },
+          ],
           stateMutability: "view",
         },
         {
-          type: "function",
-          name: "withdraw",
+          type: "event",
+          name: "SplitContributed",
           inputs: [],
-          outputs: [],
-          stateMutability: "nonpayable",
+          anonymous: false,
         },
         {
           type: "event",
-          name: "GreetingChange",
+          name: "SplitRequested",
           inputs: [
             {
-              name: "greetingSetter",
+              name: "requester",
               type: "address",
               indexed: true,
               internalType: "address",
             },
             {
-              name: "newGreeting",
-              type: "string",
+              name: "splitId",
+              type: "bytes4",
               indexed: false,
-              internalType: "string",
+              internalType: "bytes4",
+            },
+          ],
+          anonymous: false,
+        },
+        {
+          type: "event",
+          name: "SplitWithdrawn",
+          inputs: [
+            {
+              name: "requester",
+              type: "address",
+              indexed: true,
+              internalType: "address",
             },
             {
-              name: "premium",
-              type: "bool",
-              indexed: false,
-              internalType: "bool",
+              name: "splitId",
+              type: "bytes4",
+              indexed: true,
+              internalType: "bytes4",
             },
             {
-              name: "value",
+              name: "amount",
               type: "uint256",
               indexed: false,
               internalType: "uint256",
@@ -148,7 +353,7 @@ const deployedContracts = {
         },
       ],
       inheritedFunctions: {},
-      deploymentFile: "run-1748634505.json",
+      deploymentFile: "run-1748715959.json",
       deploymentScript: "Deploy.s.sol",
     },
   },

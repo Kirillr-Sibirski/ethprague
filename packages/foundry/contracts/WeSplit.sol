@@ -98,16 +98,17 @@ contract WeSplit {
         );
         bytes4 shortId = bytes4(splitId); // takes the first 4 bytes (8 hex chars)
 
-        // Store the split info
-        splits[shortId] = Split({
-            requesterAddress: msg.sender,
-            tokenAddress: tokenAddress,
-            fiatAmount: fiatAmount,
-            currency: currency,
-            description: description,
-            verified: false, //TODO: Fix this once vlayer is implemented
-            contributors: contributors
-        });
+        Split storage newSplit = splits[shortId];
+        newSplit.requesterAddress = msg.sender;
+        newSplit.tokenAddress = tokenAddress;
+        newSplit.fiatAmount = fiatAmount;
+        newSplit.currency = currency;
+        newSplit.description = description;
+        newSplit.verified = false;
+
+        for (uint256 i = 0; i < contributors.length; i++) {
+            newSplit.contributors.push(contributors[i]);
+        }
 
         userSplits[msg.sender].push(shortId);
 
