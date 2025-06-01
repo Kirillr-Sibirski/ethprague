@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
 import { SDK } from "@1inch/cross-chain-sdk";
-import axios from "axios";
 import { useAccount, useWalletClient } from "wagmi";
-
-const BASE_URL = "http://localhost:8888/";
 
 export function use1Inch() {
   const { data: walletClient } = useWalletClient();
@@ -20,7 +17,7 @@ export function use1Inch() {
 
           return walletClient!.signTypedData(typedData);
         },
-        ethCall(contractAddress: string, callData: `0x${string}`): Promise<string> {
+        ethCall(contractAddress: `0x${string}`, callData: `0x${string}`): Promise<string> {
           console.log("ethCall", contractAddress, callData);
 
           return walletClient!
@@ -52,26 +49,4 @@ export function use1Inch() {
   }, [blockchainProvider]);
 
   return { sdk };
-}
-
-export async function getBalances(chainId: number, account: string) {
-  if (!chainId || !account) return;
-
-  const req = await axios.get(`${BASE_URL}/balance/v1.2/${chainId}/balances/${account}`);
-
-  console.log(req.data);
-  return req.data;
-}
-
-export async function getAllTokensInfo(chainId: number) {
-  if (!chainId) return;
-
-  const req = await axios.get(`${BASE_URL}/token/v1.2/${chainId}`, {
-    params: {
-      provider: "1inch",
-    },
-  });
-
-  console.log(req.data);
-  return req.data;
 }
