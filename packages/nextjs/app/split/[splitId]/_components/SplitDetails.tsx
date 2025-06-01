@@ -157,8 +157,6 @@ export default function SplitDetails({ splitId }: SplitDetailsProps) {
           Back to Dashboard
         </Link>
 
-        <WithdrawButton splitId={splitId as `0x${string}`} />
-
         {/* Header Card */}
         <div className="bg-base-100 rounded-2xl shadow-xl p-8 mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
@@ -426,6 +424,8 @@ export default function SplitDetails({ splitId }: SplitDetailsProps) {
             <ShareIcon className="h-5 w-5" />
             Share Split
           </button>
+          {/* Show withdraw button if there are any contributions */}
+          {Number(totalContributedFiat) > 0 && <WithdrawButton splitId={splitId as `0x${string}`} />}
         </div>
 
         {/* Share Modal */}
