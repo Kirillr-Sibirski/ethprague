@@ -10,7 +10,7 @@ type ContribShorthandPageProps = {
 export default async function ContribShorthandPage({ params }: ContribShorthandPageProps) {
   const { contribCode } = await params;
 
-  if (!contribCode || contribCode.length !== 7 || !["a", "r"].includes(contribCode[0])) {
+  if (!contribCode) {
     notFound();
   }
 
