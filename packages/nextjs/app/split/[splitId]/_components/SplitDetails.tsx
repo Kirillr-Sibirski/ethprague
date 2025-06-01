@@ -16,6 +16,7 @@ import {
   UserGroupIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import { WithdrawButton } from "~~/components/WithdrawButton";
 import { Address } from "~~/components/scaffold-eth";
 import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 
@@ -155,6 +156,8 @@ export default function SplitDetails({ splitId }: SplitDetailsProps) {
           <ArrowLeftIcon className="h-5 w-5 mr-2 group-hover:-translate-x-1 transition-transform" />
           Back to Dashboard
         </Link>
+
+        <WithdrawButton splitId={splitId as `0x${string}`} />
 
         {/* Header Card */}
         <div className="bg-base-100 rounded-2xl shadow-xl p-8 mb-8">
