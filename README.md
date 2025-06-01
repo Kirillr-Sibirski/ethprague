@@ -1,3 +1,5 @@
+WeSplit contract deployed on optimism: https://optimistic.etherscan.io/address/0x14815d7c85488c910824dd4ee792153d55ef4619
+
 # 🏗 Scaffold-ETH 2
 
 <h4 align="center">
