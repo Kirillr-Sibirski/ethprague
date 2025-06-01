@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "http://localhost:8888/";
+const BASE_URL = "http://localhost:8888";
 
 export async function getBalances(chainId: number, account: string) {
   if (!chainId || !account) return;
