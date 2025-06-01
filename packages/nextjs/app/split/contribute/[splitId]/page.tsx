@@ -47,7 +47,7 @@ export default function SplitContributionPage({ params }: SplitDetailsPageProps)
   }
 
   const totalRequired = splitData.contributors.reduce(
-    (sum: number, contributor: any) => sum + Number(contributor.toContribute),
+    (sum: number, contributor: any) => sum + Number(formatUnits(contributor.toContribute, tokenInfo?.decimals || 18)),
     0,
   );
 
@@ -135,7 +135,7 @@ export default function SplitContributionPage({ params }: SplitDetailsPageProps)
               <div className="space-y-2">
                 {splitData.contributors.map((contributor: any, index: number) => {
                   const contributed = Number(formatUnits(contributor.contributed, tokenInfo?.decimals || 18));
-                  const toContribute = Number(contributor.toContribute);
+                  const toContribute = Number(formatUnits(contributor.toContribute, tokenInfo?.decimals || 18));
                   const contributorProgress = toContribute > 0 ? (contributed / toContribute) * 100 : 0;
                   const isComplete = contributed >= toContribute;
 

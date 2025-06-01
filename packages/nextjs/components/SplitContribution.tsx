@@ -48,9 +48,28 @@ export default function SplitContribution({ splitId }: { splitId: `0x${string}` 
     const contributor = splitData.contributors.find((contributor: any) => contributor.username === selectedContributor);
 
     if (contributor) {
-      const contributed = Number(formatUnits(contributor.contributed, tokenInfo.decimals));
-      const toContribute = Number(contributor.toContribute);
-      const remaining = Math.max(toContribute - contributed, 0);
+      console.log("Debug contributor data:", {
+        username: contributor.username,
+        contributed: contributor.contributed,
+        toContribute: contributor.toContribute,
+        tokenDecimals: tokenInfo.decimals,
+      });
+
+      // contributed is in token units with decimals
+      const contributedTokens = Number(formatUnits(contributor.contributed, tokenInfo.decimals));
+
+      // toContribute is a fiat amount - we need to convert it to token units
+      // For now, we'll treat toContribute as already in the correct token amount
+      // This might need price conversion in a real implementation
+      const toContributeTokens = Number(formatUnits(contributor.toContribute, tokenInfo.decimals));
+
+      const remaining = Math.max(toContributeTokens - contributedTokens, 0);
+
+      console.log("Debug calculated values:", {
+        contributedTokens,
+        toContributeTokens,
+        remaining,
+      });
 
       setMaxContributeAmount(remaining);
       setContributeAmount(remaining);
@@ -103,7 +122,9 @@ export default function SplitContribution({ splitId }: { splitId: `0x${string}` 
   const contributed = selectedContributorData
     ? Number(formatUnits(selectedContributorData.contributed, tokenInfo?.decimals || 18))
     : 0;
-  const toContribute = selectedContributorData ? Number(selectedContributorData.toContribute) : 0;
+  const toContribute = selectedContributorData
+    ? Number(formatUnits(selectedContributorData.toContribute, tokenInfo?.decimals || 18))
+    : 0;
   const isComplete = contributed >= toContribute;
 
   return (
@@ -116,7 +137,7 @@ export default function SplitContribution({ splitId }: { splitId: `0x${string}` 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {splitData.contributors.map((contributor: any, index: number) => {
             const contributorContributed = Number(formatUnits(contributor.contributed, tokenInfo?.decimals || 18));
-            const contributorToContribute = Number(contributor.toContribute);
+            const contributorToContribute = Number(formatUnits(contributor.toContribute, tokenInfo?.decimals || 18));
             const contributorComplete = contributorContributed >= contributorToContribute;
 
             return (

@@ -120,11 +120,25 @@ export default function SplitDetails({ splitId }: SplitDetailsProps) {
   }
 
   // Calculate stats
-  const totalToContribute = split.contributors.reduce((acc, curr) => acc + curr.toContribute, 0n);
-  const totalContributed = split.contributors.reduce((acc, curr) => acc + curr.contributed, 0n);
-  const remainingAmount = totalToContribute - totalContributed;
-  const progressPercentage = totalToContribute > 0n ? Number((totalContributed * 100n) / totalToContribute) : 0;
-  const paidContributors = split.contributors.filter(c => c.contributed >= c.toContribute).length;
+  // Note: split.fiatAmount and contributor.toContribute are fiat amounts (integers without decimals)
+  // contributor.contributed are token amounts (with 18 decimals)
+  // We need to handle them separately to avoid display issues
+
+  const totalToContributeFiat = split.contributors.reduce((acc, curr) => acc + BigInt(curr.toContribute), 0n);
+  const totalContributedTokens = split.contributors.reduce((acc, curr) => acc + curr.contributed, 0n);
+
+  // For progress calculation, we'll use simple logic: if any contributions were made, show progress
+  // This is a simplified approach since we can't easily convert between fiat and token without exchange rates
+  const hasAnyContributions = totalContributedTokens > 0n;
+  const progressPercentage = hasAnyContributions
+    ? Math.min(Number((totalContributedTokens * 100n) / (split.fiatAmount * BigInt(10 ** 18))), 100)
+    : 0;
+
+  // For remaining amount, we'll show the fiat amount left to be collected
+  const remainingFiatAmount = split.fiatAmount - totalToContributeFiat;
+
+  // For contributor status, check if they've contributed any tokens
+  const paidContributors = split.contributors.filter(c => c.contributed > 0n).length;
   const pendingContributors = split.contributors.length - paidContributors;
 
   return (
@@ -196,10 +210,10 @@ export default function SplitDetails({ splitId }: SplitDetailsProps) {
               </div>
               <div className="text-right">
                 <div className="text-2xl font-bold text-base-content">
-                  {formatEther(totalContributed)} {split.currency}
+                  {formatEther(totalContributedTokens)} {split.currency}
                 </div>
                 <div className="text-sm text-base-content/60">
-                  of {formatEther(totalToContribute)} {split.currency} raised
+                  of {Number(split.fiatAmount)} {split.currency} raised
                 </div>
               </div>
             </div>
@@ -221,7 +235,7 @@ export default function SplitDetails({ splitId }: SplitDetailsProps) {
               ></div>
             </div>
             <p className="text-sm text-base-content/60">
-              {formatEther(remainingAmount)} {split.currency} remaining
+              {Number(remainingFiatAmount)} {split.currency} remaining
             </p>
           </div>
 
@@ -264,19 +278,19 @@ export default function SplitDetails({ splitId }: SplitDetailsProps) {
               <div className="flex justify-between items-center py-3 border-b border-base-200">
                 <span className="text-base-content/70">Target Amount</span>
                 <span className="font-mono font-semibold text-lg">
-                  {formatEther(split.fiatAmount)} {split.currency}
+                  {Number(split.fiatAmount)} {split.currency}
                 </span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-base-200">
                 <span className="text-base-content/70">Amount Raised</span>
                 <span className="font-mono font-semibold text-lg text-success">
-                  {formatEther(totalContributed)} {split.currency}
+                  {formatEther(totalContributedTokens)} {split.currency}
                 </span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-base-200">
                 <span className="text-base-content/70">Remaining</span>
                 <span className="font-mono font-semibold text-lg text-warning">
-                  {formatEther(remainingAmount)} {split.currency}
+                  {Number(remainingFiatAmount)} {split.currency}
                 </span>
               </div>
             </div>
@@ -321,12 +335,10 @@ export default function SplitDetails({ splitId }: SplitDetailsProps) {
                 </thead>
                 <tbody>
                   {split.contributors.map((contributor, index) => {
-                    const remaining = contributor.toContribute - contributor.contributed;
-                    const isPaid = remaining <= 0n;
-                    const contributorProgress =
-                      contributor.toContribute > 0n
-                        ? Number((contributor.contributed * 100n) / contributor.toContribute)
-                        : 0;
+                    // Since we can't easily convert between fiat and token amounts without knowing the exchange rate,
+                    // we'll use a simplified approach: if they've contributed any tokens, consider them as having paid
+                    const isPaid = contributor.contributed > 0n;
+                    const contributorProgress = isPaid ? 100 : 0; // Simplified: either paid or not
 
                     return (
                       <tr key={contributor.username || index} className="hover:bg-base-50 border-base-200">
@@ -344,7 +356,7 @@ export default function SplitDetails({ splitId }: SplitDetailsProps) {
                         </td>
                         <td>
                           <span className="font-mono">
-                            {formatEther(contributor.toContribute)} {split.currency}
+                            {contributor.toContribute} {split.currency}
                           </span>
                         </td>
                         <td>
@@ -354,7 +366,7 @@ export default function SplitDetails({ splitId }: SplitDetailsProps) {
                         </td>
                         <td className={isPaid ? "text-success" : "text-warning"}>
                           <span className="font-mono">
-                            {formatEther(remaining)} {split.currency}
+                            {isPaid ? "0" : contributor.toContribute} {split.currency}
                           </span>
                         </td>
                         <td>
