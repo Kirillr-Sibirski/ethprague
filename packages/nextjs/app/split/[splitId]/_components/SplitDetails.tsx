@@ -121,28 +121,29 @@ export default function SplitDetails({ splitId }: SplitDetailsProps) {
   }
 
   // Calculate stats
-  // Note: split.fiatAmount and contributor.toContribute are fiat amounts (integers without decimals)
-  // contributor.contributed are token amounts (with 18 decimals)
+  // Note: contributor.toContribute are fiat amounts (simple numbers, no decimals)
+  // contributor.contributed are token amounts (with 18 decimals, need formatUnits)
+  // For simplicity, we assume 1:1 ratio between fiat and token amounts
 
-  const totalToContributeFiat = split.contributors.reduce((acc, curr) => acc + BigInt(curr.toContribute), 0n);
+  const totalToContributeFiat = split.contributors.reduce((acc, curr) => acc + Number(curr.toContribute), 0);
 
-  // Calculate actual contributed fiat amount by taking min(toContribute, contributed converted to fiat equivalent)
-  // Since we can't convert token amounts to fiat without exchange rates, we'll use a simplified approach:
-  // If contributor.contributed > 0, consider their full toContribute amount as paid
+  // Calculate actual contributed amount by converting token amounts to fiat equivalent (1:1 ratio)
   const totalContributedFiat = split.contributors.reduce((acc, curr) => {
-    // If they've contributed any tokens, consider their fiat obligation fulfilled
-    const contributedFiatEquivalent = curr.contributed > 0n ? BigInt(curr.toContribute) : 0n;
+    const contributedTokens = Number(formatEther(curr.contributed));
+    const contributedFiatEquivalent = Math.min(contributedTokens, Number(curr.toContribute));
     return acc + contributedFiatEquivalent;
-  }, 0n);
+  }, 0);
 
   // Calculate progress and remaining based on fiat amounts
-  const progressPercentage =
-    Number(totalToContributeFiat) > 0 ? Number((totalContributedFiat * 100n) / totalToContributeFiat) : 0;
+  const progressPercentage = totalToContributeFiat > 0 ? (totalContributedFiat * 100) / totalToContributeFiat : 0;
 
   const remainingFiatAmount = totalToContributeFiat - totalContributedFiat;
 
-  // For contributor status, check if they've contributed any tokens
-  const paidContributors = split.contributors.filter(c => c.contributed > 0n).length;
+  // For contributor status, check if they've fully paid their share
+  const paidContributors = split.contributors.filter(c => {
+    const contributedTokens = Number(formatEther(c.contributed));
+    return contributedTokens >= Number(c.toContribute);
+  }).length;
   const pendingContributors = split.contributors.length - paidContributors;
 
   return (
@@ -156,8 +157,6 @@ export default function SplitDetails({ splitId }: SplitDetailsProps) {
           <ArrowLeftIcon className="h-5 w-5 mr-2 group-hover:-translate-x-1 transition-transform" />
           Back to Dashboard
         </Link>
-
-        <WithdrawButton splitId={splitId as `0x${string}`} />
 
         {/* Header Card */}
         <div className="bg-base-100 rounded-2xl shadow-xl p-8 mb-8">
@@ -216,10 +215,10 @@ export default function SplitDetails({ splitId }: SplitDetailsProps) {
               </div>
               <div className="text-right">
                 <div className="text-2xl font-bold text-base-content">
-                  {Number(totalContributedFiat)} {split.currency}
+                  {totalContributedFiat.toFixed(2)} {split.currency}
                 </div>
                 <div className="text-sm text-base-content/60">
-                  of {Number(totalToContributeFiat)} {split.currency} raised
+                  of {totalToContributeFiat.toFixed(2)} {split.currency} raised
                 </div>
               </div>
             </div>
@@ -241,7 +240,7 @@ export default function SplitDetails({ splitId }: SplitDetailsProps) {
               ></div>
             </div>
             <p className="text-sm text-base-content/60">
-              {Number(remainingFiatAmount)} {split.currency} remaining
+              {remainingFiatAmount.toFixed(2)} {split.currency} remaining
             </p>
           </div>
 
@@ -284,19 +283,19 @@ export default function SplitDetails({ splitId }: SplitDetailsProps) {
               <div className="flex justify-between items-center py-3 border-b border-base-200">
                 <span className="text-base-content/70">Target Amount</span>
                 <span className="font-mono font-semibold text-lg">
-                  {Number(totalToContributeFiat)} {split.currency}
+                  {totalToContributeFiat.toFixed(2)} {split.currency}
                 </span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-base-200">
                 <span className="text-base-content/70">Amount Raised</span>
                 <span className="font-mono font-semibold text-lg text-success">
-                  {Number(totalContributedFiat)} {split.currency}
+                  {totalContributedFiat.toFixed(2)} {split.currency}
                 </span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-base-200">
                 <span className="text-base-content/70">Remaining</span>
                 <span className="font-mono font-semibold text-lg text-warning">
-                  {Number(remainingFiatAmount)} {split.currency}
+                  {remainingFiatAmount.toFixed(2)} {split.currency}
                 </span>
               </div>
             </div>
@@ -341,10 +340,14 @@ export default function SplitDetails({ splitId }: SplitDetailsProps) {
                 </thead>
                 <tbody>
                   {split.contributors.map((contributor, index) => {
-                    // Since we can't easily convert between fiat and token amounts without knowing the exchange rate,
-                    // we'll use a simplified approach: if they've contributed any tokens, consider them as having paid
-                    const isPaid = contributor.contributed > 0n;
-                    const contributorProgress = isPaid ? 100 : 0; // Simplified: either paid or not
+                    // Convert token amount to fiat equivalent (1:1 ratio for simplicity)
+                    const contributedTokens = Number(formatEther(contributor.contributed));
+                    const toContributeFiat = Number(contributor.toContribute);
+                    const contributedFiatEquivalent = Math.min(contributedTokens, toContributeFiat);
+                    const remainingFiat = Math.max(toContributeFiat - contributedTokens, 0);
+                    const contributorProgress =
+                      toContributeFiat > 0 ? (contributedFiatEquivalent * 100) / toContributeFiat : 0;
+                    const isPaid = contributedTokens >= toContributeFiat;
 
                     return (
                       <tr key={contributor.username || index} className="hover:bg-base-50 border-base-200">
@@ -362,17 +365,17 @@ export default function SplitDetails({ splitId }: SplitDetailsProps) {
                         </td>
                         <td>
                           <span className="font-mono">
-                            {contributor.toContribute} {split.currency}
+                            {toContributeFiat.toFixed(2)} {split.currency}
                           </span>
                         </td>
                         <td>
                           <span className="font-mono text-success">
-                            {formatEther(contributor.contributed)} {split.currency}
+                            {contributedFiatEquivalent.toFixed(2)} {split.currency}
                           </span>
                         </td>
                         <td className={isPaid ? "text-success" : "text-warning"}>
                           <span className="font-mono">
-                            {isPaid ? "0" : contributor.toContribute} {split.currency}
+                            {remainingFiat.toFixed(2)} {split.currency}
                           </span>
                         </td>
                         <td>
@@ -426,6 +429,8 @@ export default function SplitDetails({ splitId }: SplitDetailsProps) {
             <ShareIcon className="h-5 w-5" />
             Share Split
           </button>
+          {/* Show withdraw button if there are any contributions */}
+          {totalContributedFiat > 0 && <WithdrawButton splitId={splitId as `0x${string}`} />}
         </div>
 
         {/* Share Modal */}
