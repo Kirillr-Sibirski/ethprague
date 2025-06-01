@@ -29,10 +29,15 @@ const useConnectWallet = () => {
     closeModal();
   };
 
-  useEffect(() => {
-    showModal();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isWalletConnected]);
+  // useEffect(() => {
+  //   if (!isWalletConnected) {
+  //     showModal();
+  //   } else {
+  //     closeModal();
+  //   }
+  //   // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [isWalletConnected]);
+
 
   return {
     next,
