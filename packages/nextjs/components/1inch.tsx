@@ -17,7 +17,7 @@ const networks = {
 };
 
 // Element to render
-export const SwapModule = ({ balances, tokenInfos, processing, handleClick }) => {
+export const SwapModule = ({ balances, tokenInfos, processing, handleClick }: any) => {
   const [selectedChainId, setSelectedChainId] = useState<SupportedChain>(NetworkEnum.ETHEREUM);
   const [selectedToken, setSelectedToken] = useState<string>("");
   const [selectedAmount, setSelectedAmount] = useState<string>("");
@@ -122,10 +122,15 @@ export const SwapModule = ({ balances, tokenInfos, processing, handleClick }) =>
 // contribution = how much the user is meant to contribute. propose swap if insufficient
 // requiredGas = (estimate) of how much destination gas is required. propose swap if insufficient
 const IInchContainer = ({
-  dstChainId = 10,
-  dstTokenAddress = native_address,
-  contribution = 0.00546,
-  requiredGas = 0.0001,
+  dstChainId,
+  dstTokenAddress,
+  contribution,
+  requiredGas = 0.0001, // hardcoded for now
+}: {
+  dstChainId: number;
+  dstTokenAddress: string;
+  contribution: number;
+  requiredGas?: number;
 }) => {
   const { address: account } = useAccount();
   const { sdk } = use1Inch();
