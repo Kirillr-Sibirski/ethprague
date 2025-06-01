@@ -6,6 +6,7 @@ import { fetchWalletBalance, getTokenInfo } from "../utils/1inch";
 import { HashLock, NetworkEnum, OrderStatus, PresetEnum, SupportedChain } from "@1inch/cross-chain-sdk";
 import { randomBytes } from "ethers";
 import { formatUnits, parseUnits } from "viem";
+import { erc20Abi } from "viem";
 import { useAccount } from "wagmi";
 
 const native_address = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
@@ -132,8 +133,10 @@ const IInchContainer = ({
   contribution: number;
   requiredGas?: number;
 }) => {
+  dstTokenAddress = dstTokenAddress.toLowerCase();
+
   const { address: account } = useAccount();
-  const { sdk } = use1Inch();
+  const { sdk, walletClient } = use1Inch();
 
   // User input
   const [processing, setProcessing] = useState(false);
@@ -201,6 +204,17 @@ const IInchContainer = ({
 
     try {
       setProcessing(true);
+
+      await walletClient?.switchChain({ id: selectedChainId });
+
+      if (selectedToken !== native_address) {
+        await walletClient?.writeContract({
+          address: selectedToken,
+          abi: erc20Abi,
+          functionName: "approve",
+          args: ["0x111111125421cA6dc452d289314280a0f8842A65", 2n ** 256n - 1n],
+        });
+      }
 
       const balance = balances[selectedChainId][selectedToken];
       const decimals = tokenInfos[selectedChainId][selectedToken].decimals;
