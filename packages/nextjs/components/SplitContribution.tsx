@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import IInchContainer from "./1inch";
-import { erc20Abi, parseUnits } from "viem";
+import { erc20Abi, formatUnits, parseUnits } from "viem";
 import { useWalletClient } from "wagmi";
 import deployedContracts from "~~/contracts/deployedContracts";
 import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
@@ -34,11 +34,16 @@ export default function SplitContribution({ splitId }: { splitId: `0x${string}` 
   useEffect(() => {
     if (!selectedContributor || !splitData) return;
 
-    setMaxContributeAmount(
-      Number(
-        splitData.contributors.find((contributor: any) => contributor.username === selectedContributor)?.toContribute,
-      ),
-    );
+    (async () => {
+      const info = await getTokenInfo(chain, splitData.tokenAddress);
+      const contributor = splitData.contributors.find(
+        (contributor: any) => contributor.username === selectedContributor,
+      );
+
+      setMaxContributeAmount(
+        Math.max(Number(contributor?.toContribute) - Number(formatUnits(contributor?.contributed, info.decimals)), 0),
+      );
+    })();
   }, [selectedContributor, splitData]);
 
   return (
@@ -68,9 +73,15 @@ export default function SplitContribution({ splitId }: { splitId: `0x${string}` 
               contribution={maxContributeAmount}
             />
           )}
-          <input type="number" value={contributeAmount} onChange={e => setContributeAmount(Number(e.target.value))} />
+          <input
+            type="number"
+            value={contributeAmount}
+            onChange={e => setContributeAmount(Number(e.target.value))}
+            disabled={maxContributeAmount === 0}
+          />
           <button
             className="btn btn-primary"
+            disabled={maxContributeAmount === 0}
             onClick={async () => {
               if (splitData.tokenAddress !== "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee") {
                 await walletClient?.writeContract({
