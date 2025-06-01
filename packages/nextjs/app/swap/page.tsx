@@ -6,7 +6,7 @@ import { fetchWalletBalance, getTokenInfo } from "../../utils/1inch";
 import { HashLock, NetworkEnum, OrderStatus, PresetEnum, SupportedChain } from "@1inch/cross-chain-sdk";
 import { randomBytes } from "ethers";
 import { NextPage } from "next";
-import { parseUnits } from "viem";
+import { formatUnits, parseUnits } from "viem";
 import { useAccount } from "wagmi";
 
 // const networks = Object.entries(NetworkEnum)
@@ -19,10 +19,10 @@ import { useAccount } from "wagmi";
 //     {},
 //   );
 const networks = {
-  1: NetworkEnum.ETHEREUM,
-  137: NetworkEnum.POLYGON,
-  10: NetworkEnum.OPTIMISM,
-  42161: NetworkEnum.ARBITRUM,
+  1: "ETHEREUM",
+  137: "POLYGON",
+  10: "OPTIMISM",
+  42161: "ARBITRUM",
 };
 
 const Page: NextPage = () => {
@@ -30,6 +30,9 @@ const Page: NextPage = () => {
 
   const { sdk } = use1Inch();
   const [processing, setProcessing] = useState(false);
+  const [selectedChainId, setSelectedChainId] = useState<SupportedChain>(NetworkEnum.ETHEREUM);
+  const [selectedToken, setSelectedToken] = useState<string>("");
+  const [selectedAmount, setSelectedAmount] = useState<string>("");
 
   const [balances, setBalances] = useState<any>({});
   const [tokenInfos, setTokenInfos] = useState<any>({});
@@ -90,18 +93,27 @@ const Page: NextPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [account, balances]); // intenionally ignoring tokenInfos
 
-  async function swap() {
-    if (!sdk || !account) return;
+  async function swap(dstChainId = 10, dstTokenAddress = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee") {
+    if (!sdk || !account || !selectedChainId || !selectedToken || !selectedAmount) return;
 
     try {
       setProcessing(true);
 
+      const balance = balances[selectedChainId][selectedToken];
+      const decimals = tokenInfos[selectedChainId][selectedToken].decimals;
+
+      if (Number(parseUnits(selectedAmount, decimals)) > Number(balance)) {
+        setSelectedAmount(formatUnits(balance, decimals));
+      }
+
+      console.log(dstChainId);
+
       const params = {
-        srcChainId: NetworkEnum.ARBITRUM as SupportedChain,
-        dstChainId: NetworkEnum.OPTIMISM as SupportedChain,
-        srcTokenAddress: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
-        dstTokenAddress: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
-        amount: `${parseUnits("9", 6)}`,
+        srcChainId: selectedChainId,
+        dstChainId: dstChainId as SupportedChain,
+        srcTokenAddress: selectedToken,
+        dstTokenAddress,
+        amount: `${parseUnits(selectedAmount, decimals)}`,
         enableEstimate: true,
         walletAddress: account,
       };
@@ -182,39 +194,81 @@ const Page: NextPage = () => {
   return (
     <div className="ml-4 mr-auto flex flex-col">
       <h1>Swap Module</h1>
-      {/* <div>Processing: {processing}</div> */}
-      {/* <h2>Available Chains:</h2>
-      <div>
-        {networks.map(([id, name], k) => (
-          <div key={k}>
-            {name}: {id}
-          </div>
-        ))}
-      </div> */}
-      <div>Chain Assets:</div>
-      <div>
-        {Object.entries(balances).map(([id, assets]) => {
-          if (!assets || Object.keys(assets).length === 0) return null;
+      <select
+        defaultValue={1}
+        onChange={e => {
+          setSelectedChainId(Number(e.target.value) as SupportedChain);
+          console.log(selectedChainId, Object.keys(balances[selectedChainId] || {})[0]);
+          setSelectedToken(Object.keys(balances[selectedChainId] || {})[0]);
+        }}
+        className="select"
+      >
+        {Object.entries(networks)
+          .filter(([id]) => !!balances[id] && Object.keys(balances[id]).length !== 0)
+          .map(([id, name]) => (
+            <option key={id} value={id}>
+              {name}
+            </option>
+          ))}
+      </select>
+      <div>Selected Chain: {selectedChainId}</div>
+      <div>Available Assets:</div>
+      <select
+        onChange={e => {
+          setSelectedToken(e.target.value);
+          setSelectedAmount("");
+        }}
+        className="select"
+        disabled={!selectedChainId}
+      >
+        {Object.entries(balances[selectedChainId] || {}).map(([tokenAddress, balance]) =>
+          !tokenInfos[selectedChainId] || !tokenInfos[selectedChainId][tokenAddress] ? null : (
+            <option key={tokenAddress} value={tokenAddress}>
+              {tokenInfos[selectedChainId][tokenAddress].symbol}
+              {"  "}
+              {formatUnits(balance as any, tokenInfos[selectedChainId][tokenAddress].decimals)}
+            </option>
+          ),
+        )}
+      </select>
+      <div>Selected Asset: {selectedToken}</div>
+      <div>Amount:</div>
+      <input
+        type="number"
+        value={selectedAmount}
+        onChange={e => {
+          const balance = balances[selectedChainId][selectedToken];
+          const decimals = tokenInfos[selectedChainId][selectedToken].decimals;
 
-          const out = {};
-
-          for (const [tokenAddress, balance] of Object.entries(assets)) {
-            if (!tokenInfos[id] || !tokenInfos[id][tokenAddress]) continue;
-
-            out[tokenAddress] = {
-              ...tokenInfos[id][tokenAddress],
-              balance,
-            };
+          // Limit amount
+          if (Number(parseUnits(e.target.value, decimals)) > Number(balance)) {
+            setSelectedAmount(formatUnits(balance, decimals));
+            return;
           }
 
-          return (
-            <div key={id}>
-              {id}: {JSON.stringify(out)}
-            </div>
-          );
-        })}
-      </div>
-      <button onClick={swap} disabled={processing}>
+          // Limit number of decimal places
+          if (e.target.value.split(".").length == 2 && e.target.value.split(".")[1].length > decimals) return;
+
+          setSelectedAmount(e.target.value);
+        }}
+        className="input input-bordered"
+        disabled={processing || !selectedToken || !selectedChainId}
+      />
+      <button
+        onClick={() =>
+          setSelectedAmount(
+            formatUnits(balances[selectedChainId][selectedToken], tokenInfos[selectedChainId][selectedToken].decimals),
+          )
+        }
+        disabled={processing || !selectedToken || !selectedChainId}
+      >
+        MAX
+      </button>
+      <button
+        onClick={() => swap()}
+        disabled={processing || !selectedToken || !selectedChainId || !selectedAmount}
+        className="bg-red-500"
+      >
         Swap
       </button>
     </div>
