@@ -122,20 +122,23 @@ export default function SplitDetails({ splitId }: SplitDetailsProps) {
   // Calculate stats
   // Note: split.fiatAmount and contributor.toContribute are fiat amounts (integers without decimals)
   // contributor.contributed are token amounts (with 18 decimals)
-  // We need to handle them separately to avoid display issues
 
   const totalToContributeFiat = split.contributors.reduce((acc, curr) => acc + BigInt(curr.toContribute), 0n);
-  const totalContributedTokens = split.contributors.reduce((acc, curr) => acc + curr.contributed, 0n);
 
-  // For progress calculation, we'll use simple logic: if any contributions were made, show progress
-  // This is a simplified approach since we can't easily convert between fiat and token without exchange rates
-  const hasAnyContributions = totalContributedTokens > 0n;
-  const progressPercentage = hasAnyContributions
-    ? Math.min(Number((totalContributedTokens * 100n) / (split.fiatAmount * BigInt(10 ** 18))), 100)
-    : 0;
+  // Calculate actual contributed fiat amount by taking min(toContribute, contributed converted to fiat equivalent)
+  // Since we can't convert token amounts to fiat without exchange rates, we'll use a simplified approach:
+  // If contributor.contributed > 0, consider their full toContribute amount as paid
+  const totalContributedFiat = split.contributors.reduce((acc, curr) => {
+    // If they've contributed any tokens, consider their fiat obligation fulfilled
+    const contributedFiatEquivalent = curr.contributed > 0n ? BigInt(curr.toContribute) : 0n;
+    return acc + contributedFiatEquivalent;
+  }, 0n);
 
-  // For remaining amount, we'll show the fiat amount left to be collected
-  const remainingFiatAmount = split.fiatAmount - totalToContributeFiat;
+  // Calculate progress and remaining based on fiat amounts
+  const progressPercentage =
+    Number(totalToContributeFiat) > 0 ? Number((totalContributedFiat * 100n) / totalToContributeFiat) : 0;
+
+  const remainingFiatAmount = totalToContributeFiat - totalContributedFiat;
 
   // For contributor status, check if they've contributed any tokens
   const paidContributors = split.contributors.filter(c => c.contributed > 0n).length;
@@ -210,10 +213,10 @@ export default function SplitDetails({ splitId }: SplitDetailsProps) {
               </div>
               <div className="text-right">
                 <div className="text-2xl font-bold text-base-content">
-                  {formatEther(totalContributedTokens)} {split.currency}
+                  {Number(totalContributedFiat)} {split.currency}
                 </div>
                 <div className="text-sm text-base-content/60">
-                  of {Number(split.fiatAmount)} {split.currency} raised
+                  of {Number(totalToContributeFiat)} {split.currency} raised
                 </div>
               </div>
             </div>
@@ -278,13 +281,13 @@ export default function SplitDetails({ splitId }: SplitDetailsProps) {
               <div className="flex justify-between items-center py-3 border-b border-base-200">
                 <span className="text-base-content/70">Target Amount</span>
                 <span className="font-mono font-semibold text-lg">
-                  {Number(split.fiatAmount)} {split.currency}
+                  {Number(totalToContributeFiat)} {split.currency}
                 </span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-base-200">
                 <span className="text-base-content/70">Amount Raised</span>
                 <span className="font-mono font-semibold text-lg text-success">
-                  {formatEther(totalContributedTokens)} {split.currency}
+                  {Number(totalContributedFiat)} {split.currency}
                 </span>
               </div>
               <div className="flex justify-between items-center py-3 border-b border-base-200">
