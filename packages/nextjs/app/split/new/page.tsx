@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { useRouter } from "next/navigation";
+import * as chains from "viem/chains";
+import { useScaffoldWatchContractEvent, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
 
 interface Contributor {
   username: string;
@@ -14,10 +16,11 @@ export default function NewSplitForm() {
   const { writeContractAsync: requestSplitOnChain, isMining } = useScaffoldWriteContract({
     contractName: "WeSplit",
   });
+  const router = useRouter();
 
   // Form state
   const [fiatAmount, setFiatAmount] = useState<number>(100);
-  const [tokenAddress, setTokenAddress] = useState<string>("0x1234…abcd");
+  const [tokenAddress, setTokenAddress] = useState<string>("0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85");
   const [currency, setCurrency] = useState<string>("EUR");
   const [description, setDescription] = useState<string>("Dinner on May 31");
   const [contributors, setContributors] = useState<Contributor[]>([
@@ -25,6 +28,26 @@ export default function NewSplitForm() {
     { username: "bob", contributed: 0n, withdrawn: 0n, toContribute: 30n },
     { username: "carol", contributed: 0n, withdrawn: 0n, toContribute: 30n },
   ]);
+
+  // DONT UYSE THIS BULLSHIT FUCKINGH MAKE A FUNCITON WHICH FETCHS THE USERS SPLITS AND DETECTS A CHANGE AND REDIRECTS TO THAT RPC
+  useScaffoldWatchContractEvent({
+    contractName: "WeSplit",
+    eventName: "SplitRequested",
+    chainId: chains.optimism.id,
+    // The onLogs function is called whenever a SplitRequested event is emitted by the contract.
+    // Parameters emitted by the event can be destructed using the below example
+    // for this example: event SplitRequested(address indexed requester, bytes4 splitId);
+    onLogs: logs => {
+      logs.map(log => {
+        const { requester, splitId } = log.args;
+        console.log("📡 SplitRequested event", requester, splitId);
+        router.push(`/split/${splitId}`);
+      });
+    },
+    onError: err => {
+      console.error("⚠️ Error watching SplitRequested event:", err);
+    },
+  });
 
   const handleSubmit = async () => {
     try {
