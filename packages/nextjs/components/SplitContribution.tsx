@@ -58,16 +58,16 @@ export default function SplitContribution({ splitId }: { splitId: `0x${string}` 
       // contributed is in token units with decimals
       const contributedTokens = Number(formatUnits(contributor.contributed, tokenInfo.decimals));
 
-      // toContribute is a fiat amount - we need to convert it to token units
-      // For now, we'll treat toContribute as already in the correct token amount
-      // This might need price conversion in a real implementation
-      const toContributeTokens = Number(formatUnits(contributor.toContribute, tokenInfo.decimals));
+      // toContribute is a fiat amount (simple number, no decimals to format)
+      const toContributeFiat = Number(contributor.toContribute);
 
-      const remaining = Math.max(toContributeTokens - contributedTokens, 0);
+      // For simplicity, we'll assume 1:1 ratio between fiat and token amounts
+      // In a real implementation, you'd need price conversion here
+      const remaining = Math.max(toContributeFiat - contributedTokens, 0);
 
       console.log("Debug calculated values:", {
         contributedTokens,
-        toContributeTokens,
+        toContributeFiat,
         remaining,
       });
 
@@ -123,7 +123,7 @@ export default function SplitContribution({ splitId }: { splitId: `0x${string}` 
     ? Number(formatUnits(selectedContributorData.contributed, tokenInfo?.decimals || 18))
     : 0;
   const toContribute = selectedContributorData
-    ? Number(formatUnits(selectedContributorData.toContribute, tokenInfo?.decimals || 18))
+    ? Number(selectedContributorData.toContribute) // toContribute is fiat, no formatUnits needed
     : 0;
   const isComplete = contributed >= toContribute;
 
@@ -137,7 +137,7 @@ export default function SplitContribution({ splitId }: { splitId: `0x${string}` 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {splitData.contributors.map((contributor: any, index: number) => {
             const contributorContributed = Number(formatUnits(contributor.contributed, tokenInfo?.decimals || 18));
-            const contributorToContribute = Number(formatUnits(contributor.toContribute, tokenInfo?.decimals || 18));
+            const contributorToContribute = Number(contributor.toContribute); // toContribute is fiat, no formatUnits needed
             const contributorComplete = contributorContributed >= contributorToContribute;
 
             return (
