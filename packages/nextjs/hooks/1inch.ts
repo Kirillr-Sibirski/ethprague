@@ -48,5 +48,5 @@ export function use1Inch() {
     }
   }, [blockchainProvider]);
 
-  return { sdk };
+  return { sdk, walletClient };
 }
