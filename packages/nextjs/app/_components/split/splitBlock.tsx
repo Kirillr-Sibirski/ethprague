@@ -1,3 +1,4 @@
+"use client";
 import { useEffect, useState } from "react";
 import SplitComponent from "./splitComponent";
 import { useAccount } from "wagmi";

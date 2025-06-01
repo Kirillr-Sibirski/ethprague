@@ -23,7 +23,7 @@ const SplitComponent = ({ split, loading }: RequestComponentProps) => {
 
   if (!split) {
     return (
-      <Link href="/requests/new" className="w-full">
+      <Link href="/split/new" className="w-full">
         <div className="w-full py-2 flex flex-row items-center justify-center hover:bg-base-300 rounded-lg px-4 transition-all duration-700 ease-in-out gap-1">
           <PlusIcon className="h-6" />
           <h3>Create a new split</h3>
