@@ -1,58 +1,46 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getSplitDetails } from "~~/app/api/splits";
+import Link from "next/link";
 import type { Split } from "~~/app/api/types";
+import { getReadyContributors } from "~~/app/api/utils";
+import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
 
 interface SplitDetailsProps {
   splitId: string;
 }
 
 export default function SplitDetails({ splitId }: SplitDetailsProps) {
-  const [split, setSplit] = useState<Split | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: split, isLoading } = useScaffoldReadContract({
+    contractName: "WeSplit",
+    functionName: "getSplit",
+    args: [splitId as `0x${string}`],
+  });
 
-  useEffect(() => {
-    async function fetchSplitData() {
-      setLoading(true);
-      setError(null);
-      try {
-        const data = await getSplitDetails(splitId);
-        setSplit(data);
-      } catch (e: any) {
-        setError(e.message || "Failed to fetch split details");
-      } finally {
-        setLoading(false);
-      }
-    }
+  if (isLoading || !split) {
+    return (
+      <div className="w-full py-2 flex flex-row items-center justify-between hover:bg-base-300 rounded-lg px-4 transition-all duration-700 ease-in-out">
+        <div className="skeleton w-32 h-6" />
+        <div className="flex flex-row items-center gap-2">
+          <div className="skeleton w-16 h-4 " />
+          <progress className="progress w-56" value={0} max={1}></progress>
+        </div>
+      </div>
+    );
+  }
 
-    // Only run once on mount or whenever splitId changes
-    fetchSplitData();
-  }, [splitId]);
-
-  if (loading) return <div>Loading split details…</div>;
-  if (error) return <div>Error: {error}</div>;
-  if (!split) return <div>Split not found.</div>;
+  const contributed = getReadyContributors(split as Split).length;
 
   return (
-    <div>
-      <h1>Split Details: {split.name}</h1>
-      <p>ID: {splitId}</p>
-      <p>Token Address: {split.tokenAddress}</p>
-      <p>
-        Fiat Amount: {split.fiatAmount} {split.fiatCurrency}
-      </p>
-      <p>Verified: {split.verified ? "Yes" : "No"}</p>
-      <p>Requestor Address: {split.requestorAddress}</p>
-      <h2>Contributors:</h2>
-      <ul>
-        {split.contributors.map(c => (
-          <li key={c.username}>
-            {c.username}: Contributed {c.contributed}, To Contribute {c.toContribute}
-          </li>
-        ))}
-      </ul>
-    </div>
+    <Link href={`/split/${splitId}`} className="w-full">
+      <div className="w-full py-2 flex flex-row items-center justify-between hover:bg-base-300 rounded-lg px-4 transition-all duration-700 ease-in-out">
+        <h3>{split.description}</h3>
+        <div className="flex flex-row items-center gap-2">
+          <span className="text-sm font-light">
+            {contributed}/{split.contributors.length}
+          </span>
+          <progress className="progress w-56" value={contributed} max={split.contributors.length}></progress>
+        </div>
+      </div>
+    </Link>
   );
 }
