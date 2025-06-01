@@ -1,12 +1,18 @@
+export interface Contributor {
+  username: string;
+  contributed: bigint;
+  withdrawn: bigint;
+  toContribute: bigint;
+}
+
 export interface Split {
-  tokenAddress: string;
-  fiatAmount: number;
-  fiatCurrency: string;
-  verified: boolean;
-  requestorAddress: string;
-  contributors: Contributor[];
-  id: string;
-  name: string;
+  requesterAddress: string; // corresponds to Solidity's `address requesterAddress`
+  tokenAddress: string; // corresponds to `address tokenAddress`
+  fiatAmount: bigint; // corresponds to `uint256 fiatAmount`
+  currency: string; // corresponds to `string currency`
+  description: string; // corresponds to `string description`
+  verified: boolean; // corresponds to `bool verified`
+  contributors: Contributor[]; // corresponds to `Contributor[] contributors`
 }
 
 export interface CreateSplit {
@@ -15,13 +21,6 @@ export interface CreateSplit {
   fiatCurrency: string;
   contributors: Contributor[];
   name: string;
-}
-
-export interface Contributor {
-  username: string;
-  contributed: bigint;
-  toContribute: bigint;
-  withdrawn: bigint;
 }
 
 export interface SplitWithdraw {
