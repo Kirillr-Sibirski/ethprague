@@ -2,9 +2,18 @@
 
 import { useEffect, useState } from "react";
 import IInchContainer from "./1inch";
-import { useScaffoldReadContract } from "~~/hooks/scaffold-eth";
+import { erc20Abi, parseUnits } from "viem";
+import { useWalletClient } from "wagmi";
+import deployedContracts from "~~/contracts/deployedContracts";
+import { useScaffoldReadContract, useScaffoldWriteContract } from "~~/hooks/scaffold-eth";
+import { getTokenInfo } from "~~/utils/1inch";
 
 export default function SplitContribution({ splitId }: { splitId: `0x${string}` }) {
+  const chain = 10;
+
+  const { data: walletClient } = useWalletClient();
+  const { writeContractAsync: writeSplitContribution } = useScaffoldWriteContract({ contractName: "WeSplit" });
+
   const { data, isLoading } = useScaffoldReadContract({
     contractName: "WeSplit",
     functionName: "getSplit",
@@ -13,6 +22,7 @@ export default function SplitContribution({ splitId }: { splitId: `0x${string}` 
 
   const [splitData, setSplitData] = useState<any>();
   const [selectedContributor, setSelectedContributor] = useState<string>("");
+  const [maxContributeAmount, setMaxContributeAmount] = useState<number>(0);
   const [contributeAmount, setContributeAmount] = useState<number>(0);
 
   useEffect(() => {
@@ -24,14 +34,11 @@ export default function SplitContribution({ splitId }: { splitId: `0x${string}` 
   useEffect(() => {
     if (!selectedContributor || !splitData) return;
 
-    setContributeAmount(
+    setMaxContributeAmount(
       Number(
         splitData.contributors.find((contributor: any) => contributor.username === selectedContributor)?.toContribute,
       ),
     );
-
-    console.log(contributeAmount);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedContributor, splitData]);
 
   return (
@@ -53,10 +60,37 @@ export default function SplitContribution({ splitId }: { splitId: `0x${string}` 
               </option>
             ))}
           </select>
-          <div>Contributing: {contributeAmount}</div>
-          {contributeAmount && contributeAmount > 0 && (
-            <IInchContainer dstChainId={10} dstTokenAddress={splitData.tokenAddress} contribution={contributeAmount} />
+          <div>Contributing: {maxContributeAmount}</div>
+          {maxContributeAmount && maxContributeAmount > 0 && (
+            <IInchContainer
+              dstChainId={chain}
+              dstTokenAddress={splitData.tokenAddress}
+              contribution={maxContributeAmount}
+            />
           )}
+          <input type="number" value={contributeAmount} onChange={e => setContributeAmount(Number(e.target.value))} />
+          <button
+            className="btn btn-primary"
+            onClick={async () => {
+              if (splitData.tokenAddress !== "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee") {
+                await walletClient?.writeContract({
+                  address: splitData.tokenAddress,
+                  abi: erc20Abi,
+                  functionName: "approve",
+                  args: [deployedContracts[chain].WeSplit.address, 2n ** 256n - 1n],
+                });
+              }
+
+              const info = await getTokenInfo(chain, splitData.tokenAddress);
+
+              writeSplitContribution({
+                functionName: "contributeSplit",
+                args: [splitId, selectedContributor, parseUnits(contributeAmount.toString(), info.decimals)],
+              });
+            }}
+          >
+            Contribute
+          </button>
         </div>
       )}
     </div>
